@@ -1,15 +1,21 @@
+"""
+app 객체는 FastAPI의 핵심 객체이다. app 객체를 통해 FastAPI의 설정을 할 수 있다.
+main.py는 FastAPI 프로젝트의 전체적인 환경을 설정하는 파일이다.
+"""
+
 # 라우트를 등록하고 앱을 실행한다. 라이브러리와 사용자 라우트 정의를 임포트한다.
 from fastapi import FastAPI
-from routes.users import user_router
-from routes.events import event_router
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from database.connection import Settings
+
+from routes.users import user_router
+from routes.reservations import reservation_router
 
 import uvicorn
 
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-
 app = FastAPI()
+
 settings = Settings()
 
 
@@ -34,24 +40,20 @@ app.include_router(
     prefix="/user",
 )
 app.include_router(
-    booking_router,
-    prefix="/booking",
-)
-app.include_router(
-    opening_router,
-    prefix="/opening",
+    reservation_router,
+    prefix="/reservation",
 )
 
 
 # # 앱 실행 시 몽고DB를 초기화하도록 만든다.
-# @app.on_event("startup")
-# async def init_db():
-#     await settings.initialize_database()
+@app.on_event("startup")
+async def init_db():
+    await settings.initialize_database()
 
 
 @app.get("/")
 async def home():
-    return RedirectResponse(url="/event/")
+    return RedirectResponse(url="/reservation/")
 
 
 # uvicorn.run() 메서드를 사용해 8000번 포트에서 앱을 실행하도록 설정한다.

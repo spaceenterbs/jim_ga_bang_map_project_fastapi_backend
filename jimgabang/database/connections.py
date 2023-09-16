@@ -1,3 +1,7 @@
+"""
+connections.py 파일은 db 관련된 설정을 하는 파일이다.
+이 파일에는 db를 사용하기 위한 변수, 함수등을 정의하고 접속할 db의 주소와 사용자, 비밀번호 등을 관리한다.
+"""
 from beanie import init_beanie, PydanticObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any, List, Optional
