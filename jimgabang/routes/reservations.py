@@ -2,16 +2,20 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from database.connection import Database
-from models.events import Event, EventUpdate
+from models.reservations import Opening, OpeningUpdate
+from models.reservations import Booking, BookingUpdate
 from typing import List
 from auth.authenticate import authenticate
 
 
-event_router = APIRouter(
-    tags=["Event"],
+opening_router = APIRouter(
+    tags=["Opening"],
+)
+booking_router = APIRouter(
+    tags=["Booking"],
 )
 
-event_database = Database(Event)
+reservation_database = Database(Opening, Booking)
 
 # events = []  # 이벤트 데이터를 관리하기 위한 목적. 데이터를 리스트에 추가하거나 삭제하는 데 사용된다.
 
