@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from jose import jwt, JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러리
 from database.connection import Settings
-from models.users import User
+from models.users import Server, Client
 
 # SECRET_KEY 변수를 추출할 수 있도록 Settings 클래스의 인스턴스를 만들고 토큰 생성용 함수를 정의한다.
 settings = Settings()
@@ -50,14 +50,38 @@ async def verify_access_token(token: str) -> dict:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Token expired!",
             )
-        user_exist = await User.find_one(User.email == data["user"])
-        if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
+
+        user_type = data.get("user_type")
+
+        if user_type == "server":
+            server_exist = await Server.find_one(Server.email == data["user"])
+
+            if not server_exist:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid token",
+                )
+
+            return data
+
+        elif user_type == "client":
+            client_exist = await Client.find_one(Client.email == data["user"])
+
+            if not client_exist:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid token",
+                )
+
+            return data
+
+        else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid token",
             )
-        return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
-    except JWTError:  # JWT 요청 자체에 오류가 있는지 확인한다.
+
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid token",

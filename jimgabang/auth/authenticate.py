@@ -25,4 +25,22 @@ async def authenticate(
     decoded_token = verify_access_token(
         token
     )  # 토큰이 유효하면 토큰을 디코딩한 후 페이로드의 사용자 필드를 반환한다.
-    return decoded_token["user"]
+
+    # server나 client를 사용자로 인식하여 처리하는 로직
+    user_type = decoded_token["user_type"]
+
+    if user_type == "server":
+        # server 관련 처리 로직
+
+        return decoded_token["server_id"]
+
+    elif user_type == "client":
+        # client 관련 처리 로직
+
+        return decoded_token["client_id"]
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid user type",
+        )

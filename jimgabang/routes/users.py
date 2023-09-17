@@ -80,7 +80,7 @@ async def sign_server_in(
     해당 사용자가 존재하는지 확인한다.
     여기 쓰인 간단한 사용자 인증은 추후 수정할 예정이다.
     """
-    server_exist = await Server.find_one(Server.email == server.servername)
+    server_exist = await Server.find_one(Server.email == server.serverName)
     if not server_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -111,7 +111,7 @@ async def sign_client_in(
     해당 사용자가 존재하는지 확인한다.
     여기 쓰인 간단한 사용자 인증은 추후 수정할 예정이다.
     """
-    client_exist = await Client.find_one(Client.email == client.clientname)
+    client_exist = await Client.find_one(Client.email == client.clientName)
     if not client_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

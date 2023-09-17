@@ -6,8 +6,8 @@ from beanie import init_beanie, PydanticObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any, List, Optional
 from pydantic import BaseSettings, BaseModel
-from models.users import User
-from models.events import Event
+from models.users import Server, Client
+from models.reservations import Opening, Booking
 
 
 class Settings(BaseSettings):  # 데이터베이스를 초기화하는 메서드를 갖고 있다. 환경 변수를 읽어오는 클래스를 정의한다.
@@ -18,7 +18,7 @@ class Settings(BaseSettings):  # 데이터베이스를 초기화하는 메서드
         client = AsyncIOMotorClient(self.DATABASE_URL)
         await init_beanie(  # db 클라이언트를 설정한다. SQLModel에서 생성한 몽고 엔진 버전과 문서 모델을 인수로 설정한다.
             database=client.get_default_database(),
-            document_models=[Event, User],
+            document_models=[Server, Client, Opening, Booking],
         )
 
     class Config:  # db URL을 .env 파일에서 읽어온다.
