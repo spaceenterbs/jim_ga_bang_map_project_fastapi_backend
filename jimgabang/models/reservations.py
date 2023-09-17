@@ -42,7 +42,7 @@ class Booking(Document):
     creator: Optional[str]  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     bookDate: List[str]
     bookingBag: int
-    confirm: bool
+    confirm: bool = False
 
     class Config:
         schema_extra = {
@@ -87,13 +87,22 @@ class OpeningUpdate(BaseModel):
 class BookingUpdate(BaseModel):
     bookDate: Optional[List[str]]
     bookingBag: Optional[int]
-    confirm: Optional[bool]
 
     class Config:
         schema_extra = {
             "example": {
                 "bookDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
                 "bookingBag": 5,
+            }
+        }
+
+
+class BookingConfirmUpdate(BaseModel):
+    confirm: Optional[bool]
+
+    class Config:
+        schema_extra = {
+            "example": {
                 "confirm": False,
             }
         }

@@ -4,7 +4,7 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
 )  # 인증 정보(사용자명과 패스워드)를 추출하기 위해 로그인 라우트에 주입될 것
 from auth.jwt_handler import create_access_token
-from database.connection import Database
+from database.connections import Database
 
 from auth.hash_password import HashPassword
 
@@ -24,7 +24,7 @@ hash_password = HashPassword()
 # users = {}  # 사용자 데이터를 관리하기 위한 목적. 데이터를 딕셔너리에 추가하고 검색하기 위해 사용된다.
 
 
-@server_router.post("/server/signup")
+@server_router.post("/signup")
 async def sign_new_server(server: Server) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
@@ -45,7 +45,7 @@ async def sign_new_server(server: Server) -> dict:
     }
 
 
-@client_router.post("/client/signup")
+@client_router.post("/signup")
 async def sign_new_client(client: Client) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
@@ -70,7 +70,7 @@ async def sign_new_client(client: Client) -> dict:
 # 이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
 
 
-@server_router.post("/server/signin", response_model=TokenResponse)
+@server_router.post("/signin", response_model=TokenResponse)
 async def sign_server_in(
     server: OAuth2PasswordRequestForm = Depends(),
 ) -> dict:

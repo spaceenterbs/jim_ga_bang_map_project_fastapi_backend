@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import HTTPException, status
 from jose import jwt, JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러리
-from database.connection import Settings
+from database.connections import Settings
 from models.users import Server, Client
 
 # SECRET_KEY 변수를 추출할 수 있도록 Settings 클래스의 인스턴스를 만들고 토큰 생성용 함수를 정의한다.

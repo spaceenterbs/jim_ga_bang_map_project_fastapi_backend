@@ -7,10 +7,10 @@ main.py는 FastAPI 프로젝트의 전체적인 환경을 설정하는 파일이
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from database.connection import Settings
+from database.connections import Settings
 
-from routes.users import user_router
-from routes.reservations import reservation_router
+from routes.users import server_router, client_router
+from routes.reservations import opening_router, booking_router
 
 import uvicorn
 
@@ -36,12 +36,20 @@ app.add_middleware(
 
 # 라우트 등록
 app.include_router(
-    user_router,
-    prefix="/user",
+    server_router,
+    prefix="/server",
 )
 app.include_router(
-    reservation_router,
-    prefix="/reservation",
+    client_router,
+    prefix="/client",
+)
+app.include_router(
+    opening_router,
+    prefix="/opening",
+)
+app.include_router(
+    booking_router,
+    prefix="/booking",
 )
 
 

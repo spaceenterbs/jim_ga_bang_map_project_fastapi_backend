@@ -1,9 +1,14 @@
 # 이벤트 생성, 변경, 삭제 등의 처리를 위한 라우팅
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
-from database.connection import Database
-from models.reservations import Opening, OpeningUpdate
-from models.reservations import Booking, BookingUpdate
+from database.connections import Database
+from models.reservations import (
+    Opening,
+    OpeningUpdate,
+    Booking,
+    BookingUpdate,
+    BookingConfirmUpdate,
+)
 from typing import List
 from auth.authenticate import authenticate
 
@@ -41,9 +46,9 @@ async def retrieve_opening(id: PydanticObjectId) -> Opening:
 # 이벤트 생성 및 삭제 라우트를 정의한다. 마지막은 전체 이벤트 삭제다.
 @opening_router.post("/new")
 async def create_opening(
-    body: Opening, user: str = Depends(authenticate)
+    body: Opening, server: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    body.creator = user  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
+    body.creator = server  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
     await opening_database.save(body)
     # openings.append(body)
     return {
@@ -53,10 +58,10 @@ async def create_opening(
 
 @opening_router.delete("/{id}")
 async def delete_opening(
-    id: PydanticObjectId, user: str = Depends(authenticate)
+    id: PydanticObjectId, server: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     opening = await opening_database.get(id)
-    if opening.creator != user:
+    if opening.creator != server:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Operation not allowed",
@@ -89,10 +94,10 @@ async def delete_all_openings() -> dict:
 async def update_opening(
     id: PydanticObjectId,
     body: OpeningUpdate,
-    user: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    server: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Opening:
     opening = await opening_database.get(id)
-    if opening.creator != user:
+    if opening.creator != server:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
@@ -131,9 +136,9 @@ async def retrieve_booking(id: PydanticObjectId) -> Booking:
 # 이벤트 생성 및 삭제 라우트를 정의한다. 마지막은 전체 이벤트 삭제다.
 @booking_router.post("/new")
 async def create_booking(
-    body: Booking, user: str = Depends(authenticate)
+    body: Booking, client: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    body.creator = user  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
+    body.creator = client  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
     await booking_database.save(body)
     # bookings.append(body)
     return {
@@ -143,10 +148,10 @@ async def create_booking(
 
 @booking_router.delete("/{id}")
 async def delete_booking(
-    id: PydanticObjectId, user: str = Depends(authenticate)
+    id: PydanticObjectId, client: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     booking = await booking_database.get(id)
-    if booking.creator != user:
+    if booking.creator != client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Operation not allowed",
@@ -179,10 +184,32 @@ async def delete_all_bookings() -> dict:
 async def update_booking(
     id: PydanticObjectId,
     body: BookingUpdate,
-    user: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    client: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     booking = await booking_database.get(id)
-    if booking.creator != user:
+    if booking.creator != client:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Operation not allowed",
+        )
+    updated_booking = await booking_database.update(id, body)
+    if not updated_booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking with supplied ID does not exist",
+        )
+    return updated_booking
+
+
+# confirm 수정
+@booking_router.put("/{id}/confirm", response_model=Booking)
+async def update_booking_confirm(
+    id: PydanticObjectId,
+    body: BookingConfirmUpdate,
+    server: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+) -> Booking:
+    booking = await booking_database.get(id)
+    if booking.creator != server:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
