@@ -20,8 +20,6 @@ class Opening(Document):
     availableBag: int
     totalAvailableBag: int
 
-    # model_config = {
-    #     "json_schema_extra": {
     class Config:
         schema_extra = {
             "example": {
@@ -44,8 +42,6 @@ class Booking(Document):
     bookingBag: int
     confirm: bool
 
-    # model_config = {
-    #     "json_schema_extra": {
     class Config:
         schema_extra = {
             "example": {
@@ -114,8 +110,6 @@ class BookingUpdate(BaseModel):
 #     tags: List[str]
 #     location: str
 
-#     # model_config = {
-#     #     "json_schema_extra": {
 #     class Config:
 #         schema_extra = {
 #             "example": {

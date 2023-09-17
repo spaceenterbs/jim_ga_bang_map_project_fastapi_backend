@@ -8,7 +8,7 @@ from models.events import Event
 class Server(Document):
     email: EmailStr
     password: str
-    serverName: str
+    servername: str
     image: str
     # opening: Optional[List[Opening]]
     # events: Optional[
@@ -18,13 +18,13 @@ class Server(Document):
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "servers"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
-    # model_config = {
-    #     "json_schema_extra": {
     class Config:
         schema_extra = {
             "example": {
-                "email": "fastapi@packt.com",
-                "username": "strong!!!",
+                "email": "jimgabang@gmail.com",
+                "password": "jim",
+                "serverName": "gabang",
+                "image": "https://linktomyimage.com/image.png",
                 # "events": [],
             }
         }
@@ -33,7 +33,7 @@ class Server(Document):
 class Client(Document):
     email: EmailStr
     password: str
-    clientName: str
+    clientname: str
     # booking: Optional[List[Booking]]
     # events: Optional[
     #     List[Event]
@@ -42,13 +42,12 @@ class Client(Document):
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "clients"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
-    # model_config = {
-    #     "json_schema_extra": {
     class Config:
         schema_extra = {
             "example": {
-                "email": "fastapi@packt.com",
-                "username": "strong!!!",
+                "email": "jimgabang@gmail.com",
+                "password": "jim",
+                "clientName": "gabang",
                 # "events": [],
             }
         }
@@ -71,8 +70,6 @@ class TokenResponse(BaseModel):
 #     email: EmailStr
 #     password: str
 
-#     # model_config = {
-#     #     "json_schema_extra": {
 #     class Config:
 #         schema_extra = {
 #             "example": {

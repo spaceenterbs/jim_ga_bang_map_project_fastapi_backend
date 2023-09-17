@@ -52,8 +52,12 @@ async def init_db():
 
 
 @app.get("/")
-async def home():
-    return RedirectResponse(url="/reservation/")
+def home():
+    return "안녕하세요 짐가방입니다."
+
+
+# async def home():
+#     return RedirectResponse(url="/reservation/")
 
 
 # uvicorn.run() 메서드를 사용해 8000번 포트에서 앱을 실행하도록 설정한다.
