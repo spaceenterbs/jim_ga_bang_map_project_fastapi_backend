@@ -1,5 +1,7 @@
 # 이벤트 생성, 변경, 삭제 등의 처리를 위한 라우팅
 from beanie import PydanticObjectId
+from models.users import Host, Client
+from pydantic import EmailStr
 from fastapi import APIRouter, Depends, HTTPException, status
 from database.connections import Database
 from models.reservations import (
@@ -33,9 +35,32 @@ async def retrieve_all_services() -> List[Service]:
     return services
 
 
+# 호스트가 자신이 만든 서비스를 가져오는 API
+@service_router.get("/services", response_model=List[Service])
+async def retrieve_all_services_by_host(
+    current_user: Host = Depends(authenticate),
+) -> List[Service]:
+    services = await Service.all(creator=current_user.email)
+    return services
+
+
 # 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
 @service_router.get("/{id}", response_model=Service)
 async def retrieve_service(id: PydanticObjectId) -> Service:
+    service = await service_database.get(id)
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with supplied ID does not exist",
+        )
+    return service
+
+
+# host의 서비스 추출
+@service_router.get("/service/{id}", response_model=Service)
+async def get_service_by_id(
+    id: PydanticObjectId, current_user: Host = Depends(authenticate)
+) -> Service:
     service = await service_database.get(id)
     if not service:
         raise HTTPException(
@@ -80,7 +105,6 @@ async def delete_service(
     }
 
 
-# 변경(update) 라우트는 실제 데이터베이스와 연동할 때 구현한다.
 @service_router.put("/{id}", response_model=Service)
 async def update_service(
     id: PydanticObjectId,
@@ -114,6 +138,13 @@ async def retrieve_all_bookings() -> List[Booking]:
     return bookings
 
 
+# 클라이언트가 자신의 예약을 가져오는 API
+@booking_router.get("/bookings", response_model=List[Booking])
+async def get_user_bookings(current_user: Client = Depends(authenticate)):
+    bookings = await Booking.all(creator=current_user.email)
+    return bookings
+
+
 # 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
 @booking_router.get("/{id}", response_model=Booking)
 async def retrieve_booking(id: PydanticObjectId) -> Booking:
@@ -126,7 +157,20 @@ async def retrieve_booking(id: PydanticObjectId) -> Booking:
     return booking
 
 
-# 이벤트 생성 및 삭제 라우트를 정의한다. 마지막은 전체 이벤트 삭제다.
+# client의 예약 추출
+@booking_router.get("/booking/{id}", response_model=Booking)
+async def get_booking_by_id(
+    id: PydanticObjectId, current_user: Client = Depends(authenticate)
+) -> Booking:
+    booking = await booking_database.get(id)
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking with supplied ID does not exist",
+        )
+    return booking
+
+
 @booking_router.post("/new")
 async def create_booking(
     body: Booking, client: str = Depends(authenticate)

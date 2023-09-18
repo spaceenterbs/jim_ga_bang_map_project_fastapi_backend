@@ -8,7 +8,7 @@ from database.connections import Database
 
 from auth.hash_password import HashPassword
 
-from models.users import Host, Client, TokenResponse  # UserSignIn
+from models.users import Host, Client, TokenResponse
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
     tags=["Host"],
@@ -78,7 +78,6 @@ async def sign_host_in(
     # 함수 내에서는 패스워드, 반환된 접속 토큰, 토큰 유형을 검증한다.
     """
     해당 사용자가 존재하는지 확인한다.
-    여기 쓰인 간단한 사용자 인증은 추후 수정할 예정이다.
     """
     host_exist = await Host.find_one(Host.email == host.hostName)
     if not host_exist:

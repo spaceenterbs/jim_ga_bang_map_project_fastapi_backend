@@ -7,10 +7,6 @@ from beanie import PydanticObjectId
 
 
 class ServiceBookingRelation(Document):
-    """
-    Reference() 필드는 Beanie가 관계를 처리하고 연결된 모델 간에 데이터를 가져오거나 저장하는 데 사용되는 중요한 도구입니다. 이를 통해 관련된 모델 간의 데이터를 쉽게 검색하고 업데이트할 수 있습니다.
-    """
-
     service_id: PydanticObjectId
     booking_id: PydanticObjectId
 
