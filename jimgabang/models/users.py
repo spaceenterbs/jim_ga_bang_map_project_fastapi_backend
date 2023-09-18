@@ -24,6 +24,21 @@ class Host(Document):
         }
 
 
+class HostUpdate(BaseModel):
+    password: Optional[str]
+    hostName: Optional[str]
+    image: Optional[str]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "password": "jim",
+                "hostName": "gabang",
+                "image": "https://linktomyimage.com/image.png",
+            }
+        }
+
+
 class Client(Document):
     email: EmailStr
     password: str
@@ -36,6 +51,19 @@ class Client(Document):
         schema_extra = {
             "example": {
                 "email": "jimgabang@gmail.com",
+                "password": "jim",
+                "clientName": "gabang",
+            }
+        }
+
+
+class ClientUpdate(BaseModel):
+    password: Optional[str]
+    clientName: Optional[str]
+
+    class Config:
+        schema_extra = {
+            "example": {
                 "password": "jim",
                 "clientName": "gabang",
             }

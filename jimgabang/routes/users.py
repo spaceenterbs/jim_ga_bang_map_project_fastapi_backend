@@ -7,8 +7,8 @@ from auth.jwt_handler import create_access_token
 from database.connections import Database
 
 from auth.hash_password import HashPassword
-
-from models.users import Host, Client, TokenResponse
+from auth.authenticate import authenticate
+from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
     tags=["Host"],
@@ -134,3 +134,81 @@ async def sign_client_in(
 # 이 라우트는 로그인하려는 사용자가 데이터베이스에 존재하는지를 먼저 확인하고, 없으면 예외를 발생시킨다.
 # 사용자가 존재하면 패스워드가 일치하는지 확인해서 성공 또는 실패 메시지를 반환한다.
 # 이후 애플리케이션 내장 데이터베이스를 돕립된 데이터베이스로 옮기는 과정을 다룰 때 암호화를 사용한 패스워드 저장 방식을 다룬다.
+
+
+@host_router.put("/update", response_model=Host)
+async def update_host(
+    host_update: HostUpdate,
+    current_user: Host = Depends(authenticate),
+):
+    """
+    현재 호스트 정보를 업데이트합니다.
+    """
+    if host_update.password:
+        hashed_password = hash_password.create_hash(host_update.password)
+        host_update.password = hashed_password
+
+    updated_host = await host_database.update(current_user.id, host_update.dict())
+    if not updated_host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No Host update has been made",
+        )
+    return updated_host
+    # updated_host = await host_database.update(current_user.id, host_update.dict())
+    # if not updated_host:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="No Host update has been made",
+    #     )
+    # return updated_host
+
+
+"""
+업데이트되는 사용자 정보의 password 필드가 비어 있지 않다면, 새로운 비밀번호를 해싱하고 업데이트하기 전에 해싱된 비밀번호를 해당 필드에 할당합니다. 이렇게 하면 비밀번호가 변경될 때 새로운 해시값이 저장되며, 기존 비밀번호는 해싱되어 저장됩니다.
+"""
+
+
+@client_router.put("/update", response_model=Client)
+async def update_client(
+    client_update: ClientUpdate, current_user: Client = Depends(authenticate)
+):
+    """
+    현재 클라이언트 정보를 업데이트합니다.
+    """
+    if client_update.password:
+        hashed_password = hash_password.create_hash(client_update.password)
+        client_update.password = hashed_password
+
+    updated_client = await client_database.update(current_user.id, client_update.dict())
+    if not updated_client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No Client update has been made",
+        )
+    return updated_client
+    # updated_client = await client_database.update(current_user.id, client_update.dict())
+    # if not updated_client:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="No Client update has been made",
+    #     )
+    # return updated_client
+
+
+@host_router.delete("/delete")
+async def delete_host(current_host: Host = Depends(authenticate)):
+    """
+    현재 호스트 정보를 삭제합니다.
+    """
+    await host_database.delete(current_host.id)
+    return {"message": "Host deleted successfully."}
+
+
+@client_router.delete("/delete")
+async def delete_client(current_client: Client = Depends(authenticate)):
+    """
+    현재 클라이언트 정보를 삭제합니다.
+    """
+    await client_database.delete(current_client.id)
+    return {"message": "Client deleted successfully."}

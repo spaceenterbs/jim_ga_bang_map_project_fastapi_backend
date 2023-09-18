@@ -171,38 +171,88 @@ async def get_booking_by_id(
     return booking
 
 
-@booking_router.post("/new")
-async def create_booking(
-    body: Booking, client: str = Depends(authenticate)
-) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    body.creator = client  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
-    await booking_database.save(body)
-    # bookings.append(body)
-    return {
-        "message": "Booking created successfully",
-    }
+# @booking_router.post("/new")
+# async def create_booking(
+#     body: Booking, client: str = Depends(authenticate)
+# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+#     body.creator = client  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
+#     await booking_database.save(body)
+#     # bookings.append(body)
+#     return {
+#         "message": "Booking created successfully",
+#     }
 
 
-@booking_router.delete("/{id}")
-async def delete_booking(
-    id: PydanticObjectId, client: str = Depends(authenticate)
-) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    booking = await booking_database.get(id)
-    if booking.creator != client:
+# 예약 생성 API
+@booking_router.post("/bookings", response_model=Booking)
+async def create_booking(body: Booking, client: str = Depends(authenticate)):
+    # 고객이 예약을 생성할 때, 해당 서비스의 ID(service_id)로부터 서비스 정보를 가져옵니다.
+    service = await service_database.get(body.service_id)
+    if not service:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Operation not allowed",
+            status_code=404,
+            detail="Service with supplied ID does not exist",
         )
+
+    # 예약 가능한 가방 수를 초과하는 예약을 거부합니다.
+    if body.bookingBag > service.availableBag:
+        raise HTTPException(
+            status_code=400,
+            detail="Exceeds the available bags for this service",
+        )
+
+    # 예약을 데이터베이스에 저장합니다.
+    await booking_database.save(body)
+
+    # 서비스의 가용한 가방 수를 감소시킵니다.
+    service.availableBag -= body.bookingBag
+    await service_database.save(service)
+
+    return body
+
+
+# @booking_router.delete("/{id}")
+# async def delete_booking(
+#     id: PydanticObjectId, client: str = Depends(authenticate)
+# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+#     booking = await booking_database.get(id)
+#     if booking.creator != client:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Operation not allowed",
+#         )
+#     if not booking:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Booking with supplied ID does not exist",
+#         )
+#     await booking_database.delete(id)
+
+#     return {
+#         "message": "Booking deleted successfully",
+#     }
+
+
+# 예약 취소 API
+@booking_router.delete("/{id}")
+async def delete_booking_bag(id: PydanticObjectId, client: str = Depends(authenticate)):
+    # 예약 정보를 가져옵니다.
+    booking = await booking_database.get(id)
     if not booking:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Booking with supplied ID does not exist",
         )
+
+    # 예약을 취소합니다.
     await booking_database.delete(id)
 
-    return {
-        "message": "Booking deleted successfully",
-    }
+    # 서비스의 가용한 가방 수를 다시 증가시킵니다.
+    service = await service_database.get(booking.service_id)
+    service.availableBag += booking.bookingBag
+    await service_database.save(service)
+
+    return {"message": "Booking deleted successfully"}
 
 
 @booking_router.put("/{id}", response_model=Booking)
@@ -246,3 +296,30 @@ async def update_booking_confirm(
             detail="No Booking update has been made",
         )
     return updated_booking
+
+
+# # 예약 승인 API
+# @booking_router.put("/{id}/confirm", response_model=Booking)
+# async def update_booking_confirm(
+#     id: PydanticObjectId, host: str = Depends(authenticate)
+# ):
+#     # 예약 정보를 가져옵니다.
+#     booking = await booking_database.get(id)
+#     if not booking:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="Booking with supplied ID does not exist",
+#         )
+
+#     # 호스트만 예약을 승인할 수 있습니다.
+#     if booking.creator != host:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="Operation not allowed",
+#         )
+
+#     # 예약을 승인하고 `confirm` 필드를 업데이트합니다.
+#     booking.confirm = True
+#     await booking_database.save(booking)
+
+#     return booking
