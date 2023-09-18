@@ -26,13 +26,13 @@ async def authenticate(
         token
     )  # 토큰이 유효하면 토큰을 디코딩한 후 페이로드의 사용자 필드를 반환한다.
 
-    # server나 client를 사용자로 인식하여 처리하는 로직
+    # host나 client를 사용자로 인식하여 처리하는 로직
     user_type = decoded_token["user_type"]
 
-    if user_type == "server":
-        # server 관련 처리 로직
+    if user_type == "host":
+        # host 관련 처리 로직
 
-        return decoded_token["server_id"]
+        return decoded_token["host_id"]
 
     elif user_type == "client":
         # client 관련 처리 로직

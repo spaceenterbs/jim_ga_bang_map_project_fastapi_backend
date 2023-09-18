@@ -9,8 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from database.connections import Settings
 
-from routes.users import server_router, client_router
-from routes.reservations import opening_router, booking_router
+from routes.users import host_router, client_router
+from routes.reservations import service_router, booking_router
 
 import uvicorn
 
@@ -36,16 +36,16 @@ app.add_middleware(
 
 # 라우트 등록
 app.include_router(
-    server_router,
-    prefix="/server",
+    host_router,
+    prefix="/host",
 )
 app.include_router(
     client_router,
     prefix="/client",
 )
 app.include_router(
-    opening_router,
-    prefix="/opening",
+    service_router,
+    prefix="/service",
 )
 app.include_router(
     booking_router,

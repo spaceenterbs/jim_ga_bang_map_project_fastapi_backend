@@ -3,8 +3,8 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from database.connections import Database
 from models.reservations import (
-    Opening,
-    OpeningUpdate,
+    Service,
+    ServiceUpdate,
     Booking,
     BookingUpdate,
     BookingConfirmUpdate,
@@ -13,105 +13,98 @@ from typing import List
 from auth.authenticate import authenticate
 
 
-opening_router = APIRouter(
-    tags=["Opening"],
+service_router = APIRouter(
+    tags=["Service"],
 )
 booking_router = APIRouter(
     tags=["Booking"],
 )
 
-opening_database = Database(Opening)
+service_database = Database(Service)
 booking_database = Database(Booking)
+
+# services = []
 
 
 # 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
-@opening_router.get("/", response_model=List[Opening])
-async def retrieve_all_openings() -> List[Opening]:
-    openings = await opening_database.get_all()
-    return openings
+@service_router.get("/", response_model=List[Service])
+async def retrieve_all_services() -> List[Service]:
+    services = await service_database.get_all()
+    return services
 
 
 # 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
-@opening_router.get("/{id}", response_model=Opening)
-async def retrieve_opening(id: PydanticObjectId) -> Opening:
-    opening = await opening_database.get(id)
-    if not opening:
+@service_router.get("/{id}", response_model=Service)
+async def retrieve_service(id: PydanticObjectId) -> Service:
+    service = await service_database.get(id)
+    if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Opening with supplied ID does not exist",
+            detail="Service with supplied ID does not exist",
         )
-    return opening
+    return service
 
 
 # 이벤트 생성 및 삭제 라우트를 정의한다. 마지막은 전체 이벤트 삭제다.
-@opening_router.post("/new")
-async def create_opening(
-    body: Opening, server: str = Depends(authenticate)
+@service_router.post("/new")
+async def create_service(
+    body: Service, host: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    body.creator = server  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
-    await opening_database.save(body)
-    # openings.append(body)
+    body.creator = host  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
+    await service_database.save(body)
+    # services.append(body)
     return {
-        "message": "Opening created successfully",
+        "message": "Service created successfully",
     }
 
 
-@opening_router.delete("/{id}")
-async def delete_opening(
-    id: PydanticObjectId, server: str = Depends(authenticate)
+@service_router.delete("/{id}")
+async def delete_service(
+    id: PydanticObjectId, host: str = Depends(authenticate)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    opening = await opening_database.get(id)
-    if opening.creator != server:
+    service = await service_database.get(id)
+    if service.creator != host:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Operation not allowed",
         )
-    if not opening:
+    if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Opening with supplied ID does not exist",
+            detail="Service with supplied ID does not exist",
         )
-    await opening_database.delete(id)
+    await service_database.delete(id)
 
     return {
-        "message": "Opening deleted successfully",
-    }
-
-
-openings = []
-
-
-@opening_router.delete("/")
-async def delete_all_openings() -> dict:
-    openings.clear()
-    return {
-        "message": "All openings deleted successfully",
+        "message": "Service deleted successfully",
     }
 
 
 # 변경(update) 라우트는 실제 데이터베이스와 연동할 때 구현한다.
-@opening_router.put("/{id}", response_model=Opening)
-async def update_opening(
+@service_router.put("/{id}", response_model=Service)
+async def update_service(
     id: PydanticObjectId,
-    body: OpeningUpdate,
-    server: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-) -> Opening:
-    opening = await opening_database.get(id)
-    if opening.creator != server:
+    body: ServiceUpdate,
+    host: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+) -> Service:
+    service = await service_database.get(id)
+    if service.creator != host:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
         )
-    updated_opening = await opening_database.update(id, body)
-    if not updated_opening:
+    updated_service = await service_database.update(id, body)
+    if not updated_service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Opening with supplied ID does not exist",
+            detail="No Service update has been made",
         )
-    return updated_opening
+    return updated_service
 
 
 """""" """""" """""" """""" """""" """""" """""" """""" """""" """""" """"""
+
+# bookings = []
 
 
 # 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
@@ -168,18 +161,6 @@ async def delete_booking(
     }
 
 
-bookings = []
-
-
-@booking_router.delete("/")
-async def delete_all_bookings() -> dict:
-    bookings.clear()
-    return {
-        "message": "All bookings deleted successfully",
-    }
-
-
-# 변경(update) 라우트는 실제 데이터베이스와 연동할 때 구현한다.
 @booking_router.put("/{id}", response_model=Booking)
 async def update_booking(
     id: PydanticObjectId,
@@ -196,7 +177,7 @@ async def update_booking(
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Booking with supplied ID does not exist",
+            detail="No Booking update has been made",
         )
     return updated_booking
 
@@ -206,10 +187,10 @@ async def update_booking(
 async def update_booking_confirm(
     id: PydanticObjectId,
     body: BookingConfirmUpdate,
-    server: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    host: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     booking = await booking_database.get(id)
-    if booking.creator != server:
+    if booking.creator != host:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
@@ -218,6 +199,6 @@ async def update_booking_confirm(
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Booking with supplied ID does not exist",
+            detail="No Booking update has been made",
         )
     return updated_booking

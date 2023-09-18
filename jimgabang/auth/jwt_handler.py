@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from jose import jwt, JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러리
 from database.connections import Settings
-from models.users import Server, Client
+from models.users import Host, Client
 
 # SECRET_KEY 변수를 추출할 수 있도록 Settings 클래스의 인스턴스를 만들고 토큰 생성용 함수를 정의한다.
 settings = Settings()
@@ -53,10 +53,10 @@ async def verify_access_token(token: str) -> dict:
 
         user_type = data.get("user_type")
 
-        if user_type == "server":
-            server_exist = await Server.find_one(Server.email == data["user"])
+        if user_type == "host":
+            host_exist = await Host.find_one(Host.email == data["user"])
 
-            if not server_exist:
+            if not host_exist:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid token",

@@ -8,40 +8,40 @@ from database.connections import Database
 
 from auth.hash_password import HashPassword
 
-from models.users import Server, Client, TokenResponse  # UserSignIn
+from models.users import Host, Client, TokenResponse  # UserSignIn
 
-server_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
-    tags=["Server"],
+host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
+    tags=["Host"],
 )
 client_router = APIRouter(
     tags=["client"],
 )
 
-server_database = Database(Server)
+host_database = Database(Host)
 client_database = Database(Client)
 hash_password = HashPassword()
 
 # users = {}  # 사용자 데이터를 관리하기 위한 목적. 데이터를 딕셔너리에 추가하고 검색하기 위해 사용된다.
 
 
-@server_router.post("/signup")
-async def sign_new_server(server: Server) -> dict:
+@host_router.post("/signup")
+async def sign_new_host(host: Host) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
     """
-    server_exist = await Server.find_one(Server.email == server.email)
-    if server_exist:
+    host_exist = await Host.find_one(Host.email == host.email)
+    if host_exist:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Server with email provided exists already",
+            detail="Host with email provided exists already",
         )
-    # 패스워드를 해싱해서 db에 저장하도록 routes/servers.py의 사용자 등록 라우트를 수정한다.
+    # 패스워드를 해싱해서 db에 저장하도록 routes/hosts.py의 사용자 등록 라우트를 수정한다.
     """ 이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다. """
-    hashed_password = hash_password.create_hash(server.password)
-    server.password = hashed_password
-    await server_database.save(server)
+    hashed_password = hash_password.create_hash(host.password)
+    host.password = hashed_password
+    await host_database.save(host)
     return {
-        "message": "Server created successfully.",
+        "message": "Host created successfully.",
     }
 
 
@@ -70,27 +70,27 @@ async def sign_new_client(client: Client) -> dict:
 # 이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
 
 
-@server_router.post("/signin", response_model=TokenResponse)
-async def sign_server_in(
-    server: OAuth2PasswordRequestForm = Depends(),
+@host_router.post("/signin", response_model=TokenResponse)
+async def sign_host_in(
+    host: OAuth2PasswordRequestForm = Depends(),
 ) -> dict:
-    # OAuth2PasswordRequestForm 클래스를 sign_server_in() 라우트 함수에 주입하여 해당 함수가 OAuth2 사양을 엄격하게 따르도록 한다.
+    # OAuth2PasswordRequestForm 클래스를 sign_host_in() 라우트 함수에 주입하여 해당 함수가 OAuth2 사양을 엄격하게 따르도록 한다.
     # 함수 내에서는 패스워드, 반환된 접속 토큰, 토큰 유형을 검증한다.
     """
     해당 사용자가 존재하는지 확인한다.
     여기 쓰인 간단한 사용자 인증은 추후 수정할 예정이다.
     """
-    server_exist = await Server.find_one(Server.email == server.serverName)
-    if not server_exist:
+    host_exist = await Host.find_one(Host.email == host.hostName)
+    if not host_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Server with email does not exist.",
+            detail="Host with email does not exist.",
         )
 
     if hash_password.verify_hash(
-        server.password, server_exist.password
+        host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(server_exist.email)
+        access_token = create_access_token(host_exist.email)
         return {
             "access_token": access_token,
             "token_type": "Bearer",
