@@ -1,7 +1,9 @@
 # 사용자 처리용 모델을 정의
 from typing import Optional, List
-from beanie import Document, Link
+from beanie import Document
 from pydantic import BaseModel, EmailStr
+
+# from beanie.models import init_model
 
 
 class Host(Document):
@@ -55,6 +57,11 @@ class Client(Document):
                 "clientName": "gabang",
             }
         }
+
+
+# # Host 및 Client 모델을 초기화
+# init_model(Host, settings)
+# init_model(Client, settings)
 
 
 class ClientUpdate(BaseModel):
