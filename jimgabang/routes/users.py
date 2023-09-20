@@ -79,7 +79,7 @@ async def sign_host_in(
     """
     해당 사용자가 존재하는지 확인한다.
     """
-    host_exist = await Host.find_one(Host.email == host.email)
+    host_exist = await Host.find_one(Host.email == host.username)
     if not host_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -109,7 +109,7 @@ async def sign_client_in(
     """
     해당 사용자가 존재하는지 확인한다.
     """
-    client_exist = await Client.find_one(Client.email == client.email)
+    client_exist = await Client.find_one(Client.email == client.username)
     if not client_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -257,3 +257,12 @@ async def get_client(client_id: int):
             detail="Client not found",
         )
     return client
+
+
+@client_router.delete("/delete-all")
+async def delete_all_clients():
+    """
+    모든 클라이언트 정보를 삭제합니다.
+    """
+    await client_database.delete_all()
+    return {"message": "All clients deleted successfully."}

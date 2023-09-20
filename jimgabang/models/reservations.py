@@ -26,20 +26,23 @@ class Service(Document):
     totalAvailableBag: int
     bookings: List[PydanticObjectId]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "seviceName": "카페 짐가방",
-                "category": "카페",
-                "address": "서울특별시 강남구 역삼동 123-45",
-                "latitude": 37.123456,
-                "longitude": 37.123456,
-                "serviceTime": "09:00 ~ 18:00",
-                "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                "availableBag": 5,
-                "totalAvailableBag": 5,
-            }
+    model_config = {
+        "json_schema_extra": {
+            "exampless": [
+                {
+                    "seviceName": "카페 짐가방",
+                    "category": "카페",
+                    "address": "서울특별시 강남구 역삼동 123-45",
+                    "latitude": 37.123456,
+                    "longitude": 37.123456,
+                    "serviceTime": "09:00 ~ 18:00",
+                    "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "availableBag": 5,
+                    "totalAvailableBag": 5,
+                }
+            ]
         }
+    }
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "services"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
@@ -53,14 +56,21 @@ class Booking(Document):
     confirm: bool = False
     services: List[PydanticObjectId]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                "bookingBag": 5,
-                "confirm": False,
-            }
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "summary": "이벤트 제목",
+                    "description": "이벤트 설명",
+                    "value": {
+                        "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                        "bookingBag": 5,
+                        "confirm": False,
+                    },
+                }
+            ]
         }
+    }
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "bookings"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
@@ -77,41 +87,50 @@ class ServiceUpdate(BaseModel):
     availableBag: Optional[int]
     totalAvailableBag: Optional[int]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "seviceName": "카페 짐가방",
-                "category": "카페",
-                "address": "서울특별시 강남구 역삼동 123-45",
-                "latitude": 37.123456,
-                "longitude": 37.123456,
-                "serviceTime": "09:00 ~ 18:00",
-                "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                "availableBag": 5,
-                "totalAvailableBag": 5,
-            }
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "seviceName": "카페 짐가방",
+                    "category": "카페",
+                    "address": "서울특별시 강남구 역삼동 123-45",
+                    "latitude": 37.123456,
+                    "longitude": 37.123456,
+                    "serviceTime": "09:00 ~ 18:00",
+                    "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "availableBag": 5,
+                    "totalAvailableBag": 5,
+                }
+            ]
         }
+    }
 
 
 class BookingUpdate(BaseModel):
     bookingDate: Optional[List[date]]
     bookingBag: Optional[int]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                "bookingBag": 5,
-            }
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "bookingBag": 5,
+                }
+            ]
         }
+    }
 
 
 class BookingConfirmUpdate(BaseModel):
     confirm: Optional[bool]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "confirm": False,
-            }
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "confirm": False,
+                }
+            ]
         }
+    }

@@ -14,20 +14,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/signin")  # OAuth2를 위�
 
 
 async def authenticate(
-    token: str = Depends(oauth2_scheme),  # 토큰을 인수로 받는다.
+    access_token: str = Depends(oauth2_scheme),  # 토큰을 인수로 받는다.
 ) -> str:
-    if not token:
+    if not access_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sign in for access",
         )
 
     decoded_token = verify_access_token(
-        token
+        access_token
     )  # 토큰이 유효하면 토큰을 디코딩한 후 페이로드의 사용자 필드를 반환한다.
 
     # host나 client를 사용자로 인식하여 처리하는 로직
-    user_type = decoded_token["user_type"]
+    user_type = (await decoded_token)["user_type"]
+    """두 줄로 표시한 코드는 아래의 코드와 동일하다.
+    user_type = await decoded_token  # decoded_token을 코루틴으로 실행하여 결과를 얻음
+    user_type = user_type["user_type"]  # 결과를 사용
+    """
 
     if user_type == "host":
         # host 관련 처리 로직

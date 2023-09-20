@@ -93,3 +93,7 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
             return False
         await doc.delete()
         return True
+
+    async def delete_all(self):
+        await self.model.delete_all()
+        return True
