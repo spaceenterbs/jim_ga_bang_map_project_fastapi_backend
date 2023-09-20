@@ -79,7 +79,7 @@ async def sign_host_in(
     """
     해당 사용자가 존재하는지 확인한다.
     """
-    host_exist = await Host.find_one(Host.email == host.hostName)
+    host_exist = await Host.find_one(Host.email == host.email)
     if not host_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -108,9 +108,8 @@ async def sign_client_in(
     # 함수 내에서는 패스워드, 반환된 접속 토큰, 토큰 유형을 검증한다.
     """
     해당 사용자가 존재하는지 확인한다.
-    여기 쓰인 간단한 사용자 인증은 추후 수정할 예정이다.
     """
-    client_exist = await Client.find_one(Client.email == client.clientName)
+    client_exist = await Client.find_one(Client.email == client.email)
     if not client_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -212,3 +211,49 @@ async def delete_client(current_client: Client = Depends(authenticate)):
     """
     await client_database.delete(current_client.id)
     return {"message": "Client deleted successfully."}
+
+
+@host_router.get("/get-all", response_model=list[Host])
+async def get_all_hosts():
+    """
+    모든 호스트 정보를 가져옵니다.
+    """
+    hosts = await host_database.find_all()
+    return hosts
+
+
+@client_router.get("/get-all", response_model=list[Client])
+async def get_all_clients():
+    """
+    모든 클라이언트 정보를 가져옵니다.
+    """
+    clients = await client_database.find_all()
+    return clients
+
+
+@host_router.get("/get/{host_id}", response_model=Host)
+async def get_host(host_id: int):
+    """
+    호스트 정보를 가져옵니다.
+    """
+    host = await host_database.find_one(Host.id == host_id)
+    if not host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host not found",
+        )
+    return host
+
+
+@client_router.get("/get/{client_id}", response_model=Client)
+async def get_client(client_id: int):
+    """
+    클라이언트 정보를 가져옵니다.
+    """
+    client = await client_database.find_one(Client.id == client_id)
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found",
+        )
+    return client

@@ -16,7 +16,7 @@ class Host(Document):
         name = "hosts"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "email": "jimgabang@gmail.com",
                 "password": "jim",
@@ -32,7 +32,7 @@ class HostUpdate(BaseModel):
     image: Optional[str]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "password": "jim",
                 "hostName": "gabang",
@@ -50,7 +50,7 @@ class Client(Document):
         name = "clients"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "email": "jimgabang@gmail.com",
                 "password": "jim",
@@ -69,7 +69,7 @@ class ClientUpdate(BaseModel):
     clientName: Optional[str]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "password": "jim",
                 "clientName": "gabang",
@@ -82,7 +82,7 @@ class TokenResponse(BaseModel):
     token_type: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZh",
                 "token_type": "bearer ",

@@ -81,11 +81,11 @@ async def verify_access_token(token: str) -> dict:
                 detail="Invalid token",
             )
 
-    except JWTError:
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid token",
-        )
+        ) from exc
 
 
 # 사용자 이름을 받아서 새로운 Refresh 토큰을 생성합니다. 이 토큰은 더 오랜 기간 동안 유효하다.
@@ -147,11 +147,13 @@ async def verify_refresh_token(refresh_token: str) -> str:
                 detail="Invalid refresh token",
             )
 
-    except JWTError:
-        raise HTTPException(
+    except (
+        JWTError
+    ) as exc:  # as exc로 HTTPException이 JWTError를 원인으로 갖게 되며, 디버깅 및 로깅 등의 목적으로 예외 정보를 더 자세하게 추적할 수 있다.
+        raise HTTPException(  # 예외를 다시 발생시킬 때 보다 명시적인 방식으로 다시 발생시키도록 권장
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid refresh token",
-        )
+        ) from exc
 
 
 # # Host용 Refresh Token 생성

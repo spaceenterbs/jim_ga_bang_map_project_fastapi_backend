@@ -27,7 +27,7 @@ class Service(Document):
     bookings: List[PydanticObjectId]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "seviceName": "카페 짐가방",
                 "category": "카페",
@@ -54,7 +54,7 @@ class Booking(Document):
     services: List[PydanticObjectId]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
                 "bookingBag": 5,
@@ -78,7 +78,7 @@ class ServiceUpdate(BaseModel):
     totalAvailableBag: Optional[int]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "seviceName": "카페 짐가방",
                 "category": "카페",
@@ -98,7 +98,7 @@ class BookingUpdate(BaseModel):
     bookingBag: Optional[int]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
                 "bookingBag": 5,
@@ -110,7 +110,7 @@ class BookingConfirmUpdate(BaseModel):
     confirm: Optional[bool]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "confirm": False,
             }

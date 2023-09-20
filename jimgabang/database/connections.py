@@ -5,7 +5,8 @@ connections.py 파일은 db 관련된 설정을 하는 파일이다.
 from beanie import init_beanie, PydanticObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any, List, Optional
-from pydantic import BaseSettings, BaseModel
+from pydantic_settings import BaseSettings
+from pydantic import BaseModel
 from models.users import Host, Client
 from models.reservations import Service, Booking
 
@@ -34,6 +35,12 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
     ) -> None:  # 문서를 인수로 받는 save() 메서드를 정의한다. 문서의 인스턴스를 받아서 db 인스턴스에 전달한다.
         await document.create()
         return
+
+    async def find_one(self, query):
+        return await self.model.get_or_none(**query)
+
+    async def find_all(self):
+        return await self.model.all().to_list()
 
     async def get(
         self, id: PydanticObjectId
