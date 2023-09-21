@@ -15,7 +15,7 @@ class ServiceBookingRelation(Document):
 class Service(Document):
     # id: int
     creator: str  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
-    seviceName: str
+    serviceName: str
     category: str
     address: str
     latitude: float
@@ -28,7 +28,7 @@ class Service(Document):
 
     model_config = {
         "json_schema_extra": {
-            "exampless": [
+            "examples": [
                 {
                     "seviceName": "카페 짐가방",
                     "category": "카페",

@@ -14,7 +14,7 @@ host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정�
     tags=["Host"],
 )
 client_router = APIRouter(
-    tags=["client"],
+    tags=["Client"],
 )
 
 host_database = Database(Host)
@@ -36,7 +36,9 @@ async def sign_new_host(host: Host) -> dict:
             detail="Host with email provided exists already",
         )
     # 패스워드를 해싱해서 db에 저장하도록 routes/hosts.py의 사용자 등록 라우트를 수정한다.
-    """ 이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다. """
+    """
+    이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다.
+    """
     hashed_password = hash_password.create_hash(host.password)
     host.password = hashed_password
     await host_database.save(host)
@@ -57,7 +59,9 @@ async def sign_new_client(client: Client) -> dict:
             detail="Client with email provided exists already",
         )
     # 패스워드를 해싱해서 db에 저장하도록 routes/clients.py의 사용자 등록 라우트를 수정한다.
-    """ 이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다. """
+    """
+    이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다.
+    """
     hashed_password = hash_password.create_hash(client.password)
     client.password = hashed_password
     await client_database.save(client)
@@ -173,7 +177,9 @@ async def update_client(
     client_update: ClientUpdate, current_user: Client = Depends(authenticate)
 ):
     """
-    현재 클라이언트 정보를 업데이트합니다.
+    생성 목적: 현재 클라이언트 정보를 수정합니다.
+    \n
+
     """
     if client_update.password:
         hashed_password = hash_password.create_hash(client_update.password)
@@ -198,7 +204,9 @@ async def update_client(
 @host_router.delete("/delete")
 async def delete_host(current_host: Host = Depends(authenticate)):
     """
-    현재 호스트 정보를 삭제합니다.
+    생성 목적: 현재 호스트 정보를 삭제합니다.
+    \n
+
     """
     await host_database.delete(current_host.id)
     return {"message": "Host deleted successfully."}
@@ -207,7 +215,9 @@ async def delete_host(current_host: Host = Depends(authenticate)):
 @client_router.delete("/delete")
 async def delete_client(current_client: Client = Depends(authenticate)):
     """
-    현재 클라이언트 정보를 삭제합니다.
+    생성 목적: 현재 클라이언트 정보를 삭제합니다.
+    \n
+
     """
     await client_database.delete(current_client.id)
     return {"message": "Client deleted successfully."}
@@ -216,7 +226,7 @@ async def delete_client(current_client: Client = Depends(authenticate)):
 @host_router.get("/get-all", response_model=list[Host])
 async def get_all_hosts():
     """
-    모든 호스트 정보를 가져옵니다.
+    생성 목적: 모든 호스트 정보를 가져옵니다.
     """
     hosts = await host_database.find_all()
     return hosts
@@ -225,7 +235,7 @@ async def get_all_hosts():
 @client_router.get("/get-all", response_model=list[Client])
 async def get_all_clients():
     """
-    모든 클라이언트 정보를 가져옵니다.
+    생성 목적: 모든 클라이언트 정보를 가져옵니다.
     """
     clients = await client_database.find_all()
     return clients
@@ -234,7 +244,7 @@ async def get_all_clients():
 @host_router.get("/get/{host_id}", response_model=Host)
 async def get_host(host_id: int):
     """
-    호스트 정보를 가져옵니다.
+    생성 목적: 호스트 정보를 id로 가져옵니다.
     """
     host = await host_database.find_one(Host.id == host_id)
     if not host:
@@ -248,7 +258,7 @@ async def get_host(host_id: int):
 @client_router.get("/get/{client_id}", response_model=Client)
 async def get_client(client_id: int):
     """
-    클라이언트 정보를 가져옵니다.
+    생성 목적: 클라이언트 정보를 id로 가져옵니다.
     """
     client = await client_database.find_one(Client.id == client_id)
     if not client:
@@ -259,10 +269,10 @@ async def get_client(client_id: int):
     return client
 
 
-@client_router.delete("/delete-all")
-async def delete_all_clients():
-    """
-    모든 클라이언트 정보를 삭제합니다.
-    """
-    await client_database.delete_all()
-    return {"message": "All clients deleted successfully."}
+# @client_router.delete("/delete-all")
+# async def delete_all_clients():
+#     """
+#     모든 클라이언트 정보를 삭제합니다.
+#     """
+#     await client_database.delete_all()
+#     return {"message": "All clients deleted successfully."}
