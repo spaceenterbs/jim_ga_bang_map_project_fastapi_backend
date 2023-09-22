@@ -13,7 +13,8 @@ from fastapi.security import (
 from auth.jwt_handler import (
     verify_access_token,
 )  # 앞서 정의한 토큰 생성 및 검증 함수로, 토큰의 유효성을 확인한다.
-from typing import Union
+
+from auth.jwt_handler import verify_refresh_token  # refresh token을 검증하는 함수 추가
 
 host_oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/host/signin"
@@ -27,6 +28,7 @@ client_oauth2_scheme = OAuth2PasswordBearer(
 
 async def authenticate_host(
     access_token: str = Depends(host_oauth2_scheme),
+    refresh_token: str = Depends(host_oauth2_scheme),  # refresh token을 인수로 받음
 ) -> int:
     if not access_token:
         raise HTTPException(
@@ -45,6 +47,19 @@ async def authenticate_host(
                 detail="Invalid host token",
             )
         return host_id
+
+    elif user_type == "client":
+        # 클라이언트가 엑세스 토큰을 사용하다가 만료된 경우
+        if refresh_token:
+            # refresh token을 사용하여 새로운 엑세스 토큰을 발급
+            access_token = await verify_refresh_token(refresh_token)
+            return access_token
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access token expired, sign in for access",
+        )
+
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -54,6 +69,7 @@ async def authenticate_host(
 
 async def authenticate_client(
     access_token: str = Depends(client_oauth2_scheme),
+    refresh_token: str = Depends(client_oauth2_scheme),  # refresh token을 인수로 받음
 ) -> int:
     if not access_token:
         raise HTTPException(
@@ -72,6 +88,19 @@ async def authenticate_client(
                 detail="Invalid client token",
             )
         return client_id
+
+    elif user_type == "host":
+        # 호스트가 엑세스 토큰을 사용하다가 만료된 경우
+        if refresh_token:
+            # refresh token을 사용하여 새로운 엑세스 토큰을 발급
+            access_token = await verify_refresh_token(refresh_token)
+            return access_token
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access token expired, sign in for access",
+        )
+
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

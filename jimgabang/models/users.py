@@ -1,5 +1,5 @@
 # 사용자 처리용 모델을 정의
-from typing import Optional, List
+from typing import Optional
 from beanie import Document
 from pydantic import BaseModel, EmailStr
 

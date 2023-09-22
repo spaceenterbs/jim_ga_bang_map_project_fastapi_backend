@@ -92,7 +92,7 @@ async def get_service_by_id(
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 특정 서비스를 보여주기 위해 사용된다.
     """
     # 호스트가 자신의 서비스 중에서 service_id에 해당하는 서비스를 가져옵니다.
-    service = await Service.get(id=service_id, creator=current_user.email)
+    service = await Service.get(document_id=service_id, creator=current_user.email)
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -148,7 +148,7 @@ async def delete_service(
 
 @service_router.put("/{service_id}", response_model=Service)
 async def update_service(
-    sevice_id: PydanticObjectId,
+    service_id: PydanticObjectId,
     body: ServiceUpdate,
     host: str = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Service:
@@ -157,7 +157,7 @@ async def update_service(
     \n
     호스트가 admin 페이지에서 자신의 서비스에 들어온 예약의 확정을 하기 위해 사용된다.
     """
-    service = await service_database.get(id)
+    service = await service_database.get(service_id)
     if service.creator != host:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -237,7 +237,7 @@ async def get_booking_by_id(
     \n
 
     """
-    booking = await booking_database.get(booking_id)
+    booking = await Booking.get(document_id=booking_id, creator=current_user.email)
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

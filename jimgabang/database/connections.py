@@ -26,7 +26,9 @@ class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = "default"
 
     async def initialize_database(self):  # 데이터베이스를 초기화하는 메서드를 정의한다.
-        client = AsyncIOMotorClient(self.DATABASE_URL)
+        client = AsyncIOMotorClient(
+            self.DATABASE_URL
+        )  # AsyncIOMotorClient는 비동기로 작동하는 몽고DB 클라이언트이다.
         await init_beanie(  # db 클라이언트를 설정한다. SQLModel에서 생성한 몽고 엔진 버전과 문서 모델을 인수로 설정한다.
             database=client.get_default_database(),
             document_models=[Host, Client, Service, Booking],
