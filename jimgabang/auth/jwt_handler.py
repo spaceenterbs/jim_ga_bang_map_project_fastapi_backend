@@ -13,7 +13,6 @@ settings = Settings()
 def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
     # payload 딕셔너리는 사용자명과 만료 시간을 포함하여 JWT가 디코딩될 때 반환된다.
     payload = {
-        # "user_type": user_type,
         "user": user,
         "expires": time.time() + 3600,  # 토큰의 만료 시간을 1시간으로 설정한다.
     }

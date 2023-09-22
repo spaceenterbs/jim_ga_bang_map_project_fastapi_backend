@@ -7,7 +7,7 @@ from auth.jwt_handler import create_access_token
 from database.connections import Database
 
 from auth.hash_password import HashPassword
-from auth.authenticate import authenticate
+from auth.authenticate import authenticate_host, authenticate_client
 from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
@@ -19,6 +19,7 @@ client_router = APIRouter(
 
 host_database = Database(Host)
 client_database = Database(Client)
+
 hash_password = HashPassword()
 
 # users = {}  # 사용자 데이터를 관리하기 위한 목적. 데이터를 딕셔너리에 추가하고 검색하기 위해 사용된다.
@@ -142,7 +143,7 @@ async def sign_client_in(
 @host_router.put("/update", response_model=Host)
 async def update_host(
     host_update: HostUpdate,
-    current_user: Host = Depends(authenticate),
+    current_user: Host = Depends(authenticate_host),
 ):
     """
     현재 호스트 정보를 업데이트합니다.
@@ -174,7 +175,7 @@ async def update_host(
 
 @client_router.put("/update", response_model=Client)
 async def update_client(
-    client_update: ClientUpdate, current_user: Client = Depends(authenticate)
+    client_update: ClientUpdate, current_user: Client = Depends(authenticate_client)
 ):
     """
     생성 목적: 현재 클라이언트 정보를 수정합니다.
@@ -202,7 +203,7 @@ async def update_client(
 
 
 @host_router.delete("/delete")
-async def delete_host(current_host: Host = Depends(authenticate)):
+async def delete_host(current_host: Host = Depends(authenticate_host)):
     """
     생성 목적: 현재 호스트 정보를 삭제합니다.
     \n
@@ -213,7 +214,7 @@ async def delete_host(current_host: Host = Depends(authenticate)):
 
 
 @client_router.delete("/delete")
-async def delete_client(current_client: Client = Depends(authenticate)):
+async def delete_client(current_client: Client = Depends(authenticate_client)):
     """
     생성 목적: 현재 클라이언트 정보를 삭제합니다.
     \n

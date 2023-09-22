@@ -12,7 +12,7 @@ from models.reservations import (
     BookingConfirmUpdate,
 )
 from typing import List
-from auth.authenticate import authenticate
+from auth.authenticate import authenticate_host, authenticate_client
 
 
 service_router = APIRouter(
@@ -43,7 +43,7 @@ async def retrieve_all_services() -> List[Service]:
 # 호스트가 자신이 만든 서비스를 가져오는 API
 @service_router.get("/host", response_model=List[Service])
 async def retrieve_all_services_by_host(
-    current_user: Host = Depends(authenticate),
+    current_user: Host = Depends(authenticate_host),
 ) -> List[Service]:
     """
     생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
@@ -54,7 +54,7 @@ async def retrieve_all_services_by_host(
     return services
 
 
-# async def some_function(host: str = Depends(authenticate)):
+# async def some_function(host: str = Depends(authenticate_host)):
 #     # host 매개변수는 현재 요청을 보낸 사용자의 이메일 또는 식별자를 포함한다.
 
 #     # 이 정보를 사용하여 데이터베이스에서 호스트 정보를 검색할 수 있다.
@@ -84,7 +84,7 @@ async def retrieve_all_services_by_host(
 # host의 서비스 추출
 @service_router.get("/host/{service_id}", response_model=Service)
 async def get_service_by_id(
-    service_id: PydanticObjectId, current_user: Host = Depends(authenticate)
+    service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
 ) -> Service:
     """
     생성 목적: 호스트 자신이 만든 특정 ID의 서비스를 추출한다.
@@ -104,7 +104,7 @@ async def get_service_by_id(
 # 이벤트 생성 및 삭제 라우트를 정의한다.
 @service_router.post("/new")
 async def create_service(
-    body: Service, host: str = Depends(authenticate)
+    body: Service, host: str = Depends(authenticate_host)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     """
     생성 목적: 호스트가 새로운 자신의 서비스를 생성한다.
@@ -121,7 +121,7 @@ async def create_service(
 
 @service_router.delete("/{service_id}")
 async def delete_service(
-    service_id: PydanticObjectId, host: str = Depends(authenticate)
+    service_id: PydanticObjectId, host: str = Depends(authenticate_host)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     """
     생성 목적: 호스트가 자신의 서비스를 삭제한다.
@@ -150,7 +150,7 @@ async def delete_service(
 async def update_service(
     sevice_id: PydanticObjectId,
     body: ServiceUpdate,
-    host: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    host: str = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Service:
     """
     생성 목적: 호스트가 자신의 서비스를 업데이트한다.
@@ -201,7 +201,7 @@ async def retrieve_all_bookings() -> List[Booking]:
 
 # 클라이언트가 자신의 예약을 가져오는 API
 @booking_router.get("/client", response_model=List[Booking])
-async def get_user_bookings(current_user: Client = Depends(authenticate)):
+async def get_user_bookings(current_user: Client = Depends(authenticate_client)):
     """
     생성 목적: 클라이언트 자신의 예약을 추출한다.
     \n
@@ -230,7 +230,7 @@ async def retrieve_booking(booking_id: PydanticObjectId) -> Booking:
 # client의 예약 추출
 @booking_router.get("/client/{booking_id}", response_model=Booking)
 async def get_booking_by_id(
-    booking_id: PydanticObjectId, current_user: Client = Depends(authenticate)
+    booking_id: PydanticObjectId, current_user: Client = Depends(authenticate_client)
 ) -> Booking:
     """
     생성 목적: 클라이언트 자신의 예약을 id로 추출한다.
@@ -248,7 +248,7 @@ async def get_booking_by_id(
 
 # @booking_router.post("/new")
 # async def create_booking(
-#     body: Booking, client: str = Depends(authenticate)
+#     body: Booking, client: str = Depends(authenticate_client)
 # ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 #     body.creator = client  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
 #     await booking_database.save(body)
@@ -260,7 +260,7 @@ async def get_booking_by_id(
 
 # 예약 생성 API
 @booking_router.post("/new", response_model=Booking)
-async def create_booking(body: Booking, client: str = Depends(authenticate)):
+async def create_booking(body: Booking, client: str = Depends(authenticate_client)):
     """
     생성 목적: 클라이언트가 자신의 예약을 생성한다.
     \n
@@ -293,7 +293,7 @@ async def create_booking(body: Booking, client: str = Depends(authenticate)):
 
 # @booking_router.delete("/{booking_id}")
 # async def delete_booking(
-#     booking_id: PydanticObjectId, client: str = Depends(authenticate)
+#     booking_id: PydanticObjectId, client: str = Depends(authenticate_client)
 # ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 #     booking = await booking_database.get(booking_id)
 #     if booking.creator != client:
@@ -316,7 +316,7 @@ async def create_booking(body: Booking, client: str = Depends(authenticate)):
 # 예약 취소 API
 @booking_router.delete("/{booking_id}")
 async def delete_booking_bag(
-    booking_id: PydanticObjectId, client: str = Depends(authenticate)
+    booking_id: PydanticObjectId, client: str = Depends(authenticate_client)
 ):
     """
     생성 목적: 클라이언트가 자신의 예약을 취소한다.
@@ -346,7 +346,7 @@ async def delete_booking_bag(
 async def update_booking(
     booking_id: PydanticObjectId,
     body: BookingUpdate,
-    client: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    client: str = Depends(authenticate_client),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     """
     생성 목적: 클라이언트가 자신의 예약을 업데이트한다.
@@ -373,7 +373,7 @@ async def update_booking(
 async def update_booking_confirm(
     booking_id: PydanticObjectId,
     body: BookingConfirmUpdate,
-    host: str = Depends(authenticate),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    host: str = Depends(authenticate_client),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     """
     생성 목적: 호스트가 자신이 생성한 서비스에 예약이 들어온 것을 확정한다.
@@ -398,7 +398,7 @@ async def update_booking_confirm(
 # # 예약 승인 API
 # @booking_router.put("/{booking_id}/confirm", response_model=Booking)
 # async def update_booking_confirm(
-#     booking_id: PydanticObjectId, host: str = Depends(authenticate)
+#     booking_id: PydanticObjectId, host: str = Depends(authenticate_client)
 # ):
 #     # 예약 정보를 가져옵니다.
 #     booking = await booking_database.get(booking_id)
