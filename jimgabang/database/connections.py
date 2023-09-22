@@ -1,9 +1,12 @@
 """
-connections.py 파일은 db 관련된 설정을 하는 파일이다.
-이 파일에는 db를 사용하기 위한 변수, 함수등을 정의하고 접속할 db의 주소와 사용자, 비밀번호 등을 관리한다.
+connections.py 파일은 db 관련된 설정과 연결을 관리 하는 파일.
+이 파일에는 db를 사용하기 위한 변수, 함수등을 정의하고
+접속할 db의 주소와 사용자, 비밀번호 등을 관리한다.
 """
 from beanie import init_beanie, PydanticObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+)  # AsyncIOMotorClient는 비동기로 작동하는 몽고DB 클라이언트이다.
 from typing import Any, List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel
@@ -11,7 +14,14 @@ from models.users import Host, Client
 from models.reservations import Service, Booking
 
 
-class Settings(BaseSettings):  # 데이터베이스를 초기화하는 메서드를 갖고 있다. 환경 변수를 읽어오는 클래스를 정의한다.
+# 데이터베이스를 초기화하는 메서드를 갖고 있다. 환경 변수를 읽어오는 클래스를 정의한다.
+class Settings(BaseSettings):
+    """
+    DB 초기화와 관련된 설정을 다루는 데 사용된다.
+    환경 변수를 읽어오며 'initialize_database'메서드를 통해 DB 초기화 작업을 수행한다.
+    또한 .env 파일에서 환경 변수를 읽어온다.
+    """
+
     SECRET_KEY: Optional[str] = None
     DATABASE_URL: Optional[str] = "default"
 
@@ -27,6 +37,19 @@ class Settings(BaseSettings):  # 데이터베이스를 초기화하는 메서드
 
 
 class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중에 사용되는 모델은 Event 또는 User 문서의 모델이다.
+    """
+    모델을 인수로 받아서 해당 모델과 상호작용하는 여러 메서드를 제공한다.
+    save() 메서드는 문서를 인수로 받아서 db에 저장한다.
+    find_one() 메서드는 쿼리를 인수로 받아서 일치하는 문서를 반환한다.
+    find_all() 메서드는 컬렉션에 있는 모든 문서를 반환한다.
+    get() 메서드는 ID를 인수로 받아서 컬렉션에서 일치하는 레코드를 불러온다.
+    get_all() 메서드는 인수가 없고 컬렉션에 있는 모든 레코드를 불러온다.
+    find() 메서드는 쿼리를 인수로 받아서 일치하는 레코드를 반환한다.
+    update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인수로 받아서, 클라이언트가 보낸 PUT 요청에 의해 변경된 필드를 업데이트한다.
+    delete() 메서드는 해당 레코드가 있는지 확인하고 있으면 삭제한다.
+    delete_all() 메서드는 컬렉션에 있는 모든 레코드를 삭제한다.
+    """
+
     def __init__(self, model):
         self.model = model
 
@@ -54,8 +77,8 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
         docs = await self.model.find_all().to_list()
         return docs
 
-    async def find_many(self, query):
-        return await self.find(query)
+    async def find(self, query):  # 주어진 쿼리에 해당하는 모든 문서를 반환한다.
+        return await self.model.filter(**query).all().to_list()
 
     async def update(  #
         self, id: PydanticObjectId, body: BaseModel

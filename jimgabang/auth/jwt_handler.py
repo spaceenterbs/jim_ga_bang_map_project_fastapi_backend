@@ -13,6 +13,7 @@ settings = Settings()
 def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
     # payload 딕셔너리는 사용자명과 만료 시간을 포함하여 JWT가 디코딩될 때 반환된다.
     payload = {
+        # "user_type": user_type,
         "user": user,
         "expires": time.time() + 3600,  # 토큰의 만료 시간을 1시간으로 설정한다.
     }
@@ -54,7 +55,7 @@ async def verify_access_token(token: str) -> dict:
         user_type = data.get("user_type")
 
         if user_type == "host":
-            host_exist = await Host.find_one(Host.email == data["user"])
+            host_exist = await Host.find_one(Host.email == data["host"])
 
             if not host_exist:
                 raise HTTPException(
@@ -65,7 +66,7 @@ async def verify_access_token(token: str) -> dict:
             return data
 
         elif user_type == "client":
-            client_exist = await Client.find_one(Client.email == data["user"])
+            client_exist = await Client.find_one(Client.email == data["client"])
 
             if not client_exist:
                 raise HTTPException(
@@ -82,6 +83,8 @@ async def verify_access_token(token: str) -> dict:
             )
 
     except JWTError as exc:
+        # 예외 발생 시 로그를 출력한다.
+        print(f"JWTERROR: {exc}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid token",
