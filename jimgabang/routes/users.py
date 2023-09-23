@@ -29,6 +29,8 @@ hash_password = HashPassword()
 async def sign_new_host(host: Host) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
+    등록 라우트에서는 애플리케이션에 내장된 데이터베이스를 사용한다.
+    이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
     """
     host_exist = await Host.find_one(Host.email == host.email)
     if host_exist:
@@ -71,10 +73,6 @@ async def sign_new_client(client: Client) -> dict:
     }
 
 
-# 등록 라우트에서는 애플리케이션에 내장된 데이터베이스를 사용한다.
-# 이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
-
-
 @host_router.post("/signin", response_model=TokenResponse)
 async def sign_host_in(
     host: OAuth2PasswordRequestForm = Depends(),
@@ -94,7 +92,7 @@ async def sign_host_in(
     if hash_password.verify_hash(
         host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(host_exist.email)
+        access_token = create_access_token("host", host_exist.email)
         return {
             "access_token": access_token,
             "token_type": "Bearer",
@@ -124,7 +122,7 @@ async def sign_client_in(
     if hash_password.verify_hash(
         client.password, client_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(client_exist.email)
+        access_token = create_access_token("client", client_exist.email)
         return {
             "access_token": access_token,
             "token_type": "Bearer",

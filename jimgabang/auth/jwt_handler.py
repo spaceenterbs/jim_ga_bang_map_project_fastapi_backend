@@ -10,11 +10,17 @@ from models.users import Host, Client
 settings = Settings()
 
 
-def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
+def create_access_token(
+    user_type: str, user: str
+) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
     # payload 딕셔너리는 사용자명과 만료 시간을 포함하여 JWT가 디코딩될 때 반환된다.
     payload = {
-        "user": user,
-        "expires": time.time() + 3600,  # 토큰의 만료 시간을 1시간으로 설정한다.
+        "user_type": user_type,
+        # "host"
+        # if user == "host"
+        # else "client",  # user 변수의 값이 host인 경우 user_type 필드에 host를, client인 경우 client를 저장한다.
+        "email": user,
+        "expires": time.time() + 3600 * 24,  # 토큰의 만료 시간을 1일으로 설정한다.
     }
 
     """
@@ -54,23 +60,23 @@ async def verify_access_token(token: str) -> dict:
         user_type = data.get("user_type")
 
         if user_type == "host":
-            host_exist = await Host.find_one(Host.email == data["host"])
+            host_exist = await Host.find_one(Host.email == data["email"])
 
             if not host_exist:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid token",
+                    detail="Invalid host token",
                 )
 
             return data
 
         elif user_type == "client":
-            client_exist = await Client.find_one(Client.email == data["client"])
+            client_exist = await Client.find_one(Client.email == data["email"])
 
             if not client_exist:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid token",
+                    detail="Invalid client token",
                 )
 
             return data
@@ -78,22 +84,23 @@ async def verify_access_token(token: str) -> dict:
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid token",
+                detail="Invalid exception token",
             )
 
     except JWTError as exc:
         # 예외 발생 시 로그를 출력한다.
-        print(f"JWTERROR: {exc}")
+        # print(f"JWTERROR: {exc}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid token",
+            detail="Invalid JWTError token",
         ) from exc
 
 
 # 사용자 이름을 받아서 새로운 Refresh 토큰을 생성합니다. 이 토큰은 더 오랜 기간 동안 유효하다.
-def create_refresh_token(user: str) -> str:
+def create_refresh_token(user_type: str, user: str) -> str:
     payload = {
-        "user": user,
+        "user_type": user_type,
+        "email": user,
         "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
     }
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
@@ -118,43 +125,49 @@ async def verify_refresh_token(refresh_token: str) -> str:
             )
 
         user_type = data.get("user_type")
+        user = data.get("user")  # 사용자 이메일을 가져옵니다.
 
         if user_type == "host":
-            host_exist = await Host.find_one(Host.email == data["user"])
+            host_exist = await Host.find_one(Host.email == data["email"])
 
             if not host_exist:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid refresh token",
+                    detail="Invalid host refresh token",
                 )
 
-            access_token = create_access_token(host_exist.email)
+            access_token = create_access_token(
+                "host", host_exist.email
+            )  # user_type과 user 값을 전달합니다.
             return access_token
 
         elif user_type == "client":
-            client_exist = await Client.find_one(Client.email == data["user"])
+            client_exist = await Client.find_one(Client.email == data["email"])
 
             if not client_exist:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid refresh token",
+                    detail="Invalid client refresh token",
                 )
 
-            access_token = create_access_token(client_exist.email)
+            access_token = create_access_token(
+                "client", client_exist.email
+            )  # user_type과 user 값을 전달합니다.
             return access_token
 
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid refresh token",
+                detail="Invalid exception refresh token",
             )
 
     except (
         JWTError
     ) as exc:  # as exc로 HTTPException이 JWTError를 원인으로 갖게 되며, 디버깅 및 로깅 등의 목적으로 예외 정보를 더 자세하게 추적할 수 있다.
+        print(f"JWTERROR: {exc}")
         raise HTTPException(  # 예외를 다시 발생시킬 때 보다 명시적인 방식으로 다시 발생시키도록 권장
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid refresh token",
+            detail="Invalid JWTError refresh token",
         ) from exc
 
 

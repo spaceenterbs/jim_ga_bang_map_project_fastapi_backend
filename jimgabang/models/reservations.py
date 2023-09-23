@@ -14,7 +14,7 @@ class ServiceBookingRelation(Document):
 # models 폴더의 모델 파일을 변경하여 몽고DB 문서를 사용할 수 있도록 한다.
 class Service(Document):
     # id: int
-    creator: str  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
+    creator: Optional[str]  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
     serviceName: str
     category: str
     address: str
@@ -50,7 +50,7 @@ class Service(Document):
 
 class Booking(Document):
     # id: int
-    creator: str  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
+    creator: Optional[str]  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     bookingDate: List[date]
     bookingBag: int
     confirm: bool = False

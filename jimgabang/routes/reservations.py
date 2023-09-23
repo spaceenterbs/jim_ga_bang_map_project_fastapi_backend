@@ -39,6 +39,21 @@ async def retrieve_all_services() -> List[Service]:
     services = await service_database.get_all()
     return services
 
+    # if user_type not in ["host", "client"]:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Invalid user_type specified in header",
+    #     )
+
+    # if user_type == "host":
+    #     # 호스트와 관련된 작업 수행
+    #     services = await service_database.get_all()
+    # else:
+    #     # 클라이언트와 관련된 작업 수행
+    #     services = await service_database.get_all()  # 클라이언트의 경우 모든 서비스를 가져오도록 예시로 설정
+
+    # return services
+
 
 # 호스트가 자신이 만든 서비스를 가져오는 API
 @service_router.get("/host", response_model=List[Service])

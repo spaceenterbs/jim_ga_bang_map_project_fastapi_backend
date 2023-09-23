@@ -28,8 +28,8 @@ client_oauth2_scheme = OAuth2PasswordBearer(
 
 async def authenticate_host(
     access_token: str = Depends(host_oauth2_scheme),
-    refresh_token: str = Depends(host_oauth2_scheme),  # refresh token을 인수로 받음
-) -> int:
+    refresh_token: str = Depends(host_oauth2_scheme),
+) -> str:
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -46,19 +46,19 @@ async def authenticate_host(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid host token",
             )
-        return host_id
 
-    elif user_type == "client":
-        # 클라이언트가 엑세스 토큰을 사용하다가 만료된 경우
+        # 호스트가 엑세스 토큰을 사용하다가 만료된 경우 리프레시 토큰을 사용하여 새로운 엑세스 토큰 발급
         if refresh_token:
-            # refresh token을 사용하여 새로운 엑세스 토큰을 발급
-            access_token = await verify_refresh_token(refresh_token)
-            return access_token
+            try:
+                access_token = await verify_refresh_token(refresh_token)
+                return access_token
+            except HTTPException as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Invalid refresh token",
+                ) from exc
 
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access token expired, sign in for access",
-        )
+        return host_id
 
     else:
         raise HTTPException(
@@ -69,7 +69,7 @@ async def authenticate_host(
 
 async def authenticate_client(
     access_token: str = Depends(client_oauth2_scheme),
-    refresh_token: str = Depends(client_oauth2_scheme),  # refresh token을 인수로 받음
+    refresh_token: str = Depends(client_oauth2_scheme),
 ) -> int:
     if not access_token:
         raise HTTPException(
@@ -87,19 +87,19 @@ async def authenticate_client(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid client token",
             )
-        return client_id
 
-    elif user_type == "host":
-        # 호스트가 엑세스 토큰을 사용하다가 만료된 경우
+        # 클라이언트가 엑세스 토큰을 사용하다가 만료된 경우 리프레시 토큰을 사용하여 새로운 엑세스 토큰 발급
         if refresh_token:
-            # refresh token을 사용하여 새로운 엑세스 토큰을 발급
-            access_token = await verify_refresh_token(refresh_token)
-            return access_token
+            try:
+                access_token = await verify_refresh_token(refresh_token)
+                return access_token
+            except HTTPException as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Invalid refresh token",
+                ) from exc
 
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access token expired, sign in for access",
-        )
+        return client_id
 
     else:
         raise HTTPException(
@@ -113,7 +113,7 @@ async def authenticate_client(
 # ) -> Union[str, int]:
 #     """
 #     Depends 기능을 사용하여 인증을 처리한다.
-#     함수는 access_tokend이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
+#     함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
 #     """
 #     if not access_token:
 #         raise HTTPException(
