@@ -19,7 +19,7 @@ def create_access_token(
         # "host"
         # if user == "host"
         # else "client",  # user 변수의 값이 host인 경우 user_type 필드에 host를, client인 경우 client를 저장한다.
-        "email": user,
+        "user": user,
         "expires": time.time() + 3600 * 24,  # 토큰의 만료 시간을 1일으로 설정한다.
     }
 
@@ -57,10 +57,10 @@ async def verify_access_token(token: str) -> dict:
                 detail="Token expired!",
             )
 
-        user_type = data.get("user_type")
+        user_type = data.get("user_type", "")  # user_type 필드가 없으면 빈 문자열로 초기화
 
         if user_type == "host":
-            host_exist = await Host.find_one(Host.email == data["email"])
+            host_exist = await Host.find_one(Host.email == data["user"])
 
             if not host_exist:
                 raise HTTPException(
@@ -71,7 +71,7 @@ async def verify_access_token(token: str) -> dict:
             return data
 
         elif user_type == "client":
-            client_exist = await Client.find_one(Client.email == data["email"])
+            client_exist = await Client.find_one(Client.email == data["user"])
 
             if not client_exist:
                 raise HTTPException(
@@ -125,10 +125,9 @@ async def verify_refresh_token(refresh_token: str) -> str:
             )
 
         user_type = data.get("user_type")
-        user = data.get("user")  # 사용자 이메일을 가져옵니다.
 
         if user_type == "host":
-            host_exist = await Host.find_one(Host.email == data["email"])
+            host_exist = await Host.find_one(Host.email == data["user"])
 
             if not host_exist:
                 raise HTTPException(
@@ -142,7 +141,7 @@ async def verify_refresh_token(refresh_token: str) -> str:
             return access_token
 
         elif user_type == "client":
-            client_exist = await Client.find_one(Client.email == data["email"])
+            client_exist = await Client.find_one(Client.email == data["user"])
 
             if not client_exist:
                 raise HTTPException(
