@@ -109,7 +109,7 @@ async def authenticate(
     return user_id
 
 
-# async def authenticate_host(
+# async def authenticate(
 #     access_token: str = Depends(host_oauth2_scheme),
 #     refresh_token: str = Depends(host_oauth2_scheme),
 # ) -> str:
@@ -150,7 +150,7 @@ async def authenticate(
 #         )
 
 
-# async def authenticate_client(
+# async def authenticate(
 #     access_token: str = Depends(client_oauth2_scheme),
 #     refresh_token: str = Depends(client_oauth2_scheme),
 # ) -> int:
