@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import (
     OAuth2PasswordRequestForm,
 )  # 인증 정보(사용자명과 패스워드)를 추출하기 위해 로그인 라우트에 주입될 것
-from auth.jwt_handler import create_access_token
+from auth.jwt_handler import create_access_token, create_refresh_token
 from database.connections import Database
 
 from auth.hash_password import HashPassword
@@ -93,8 +93,10 @@ async def sign_host_in(
         host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
         access_token = create_access_token("host", host_exist.email)
+        refresh_token = create_refresh_token("host", host_exist.email)
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "Bearer",
         }
     raise HTTPException(
@@ -123,8 +125,10 @@ async def sign_client_in(
         client.password, client_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
         access_token = create_access_token("client", client_exist.email)
+        refresh_token = create_refresh_token("client", client_exist.email)
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "Bearer",
         }
     raise HTTPException(
@@ -268,10 +272,19 @@ async def get_client(client_id: int):
     return client
 
 
-# @client_router.delete("/delete-all")
-# async def delete_all_clients():
-#     """
-#     모든 클라이언트 정보를 삭제합니다.
-#     """
-#     await client_database.delete_all()
-#     return {"message": "All clients deleted successfully."}
+@host_router.delete("/delete-all")
+async def delete_all_hosts():
+    """
+    모든 호스트 정보를 삭제합니다.
+    """
+    await host_database.delete_all()
+    return {"message": "All hosts deleted successfully."}
+
+
+@client_router.delete("/delete-all")
+async def delete_all_clients():
+    """
+    모든 클라이언트 정보를 삭제합니다.
+    """
+    await client_database.delete_all()
+    return {"message": "All clients deleted successfully."}

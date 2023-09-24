@@ -11,14 +11,12 @@ settings = Settings()
 
 
 def create_access_token(
-    user_type: str, user: str
+    user_type: str,
+    user: str,
 ) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
     # payload 딕셔너리는 사용자명과 만료 시간을 포함하여 JWT가 디코딩될 때 반환된다.
     payload = {
         "user_type": user_type,
-        # "host"
-        # if user == "host"
-        # else "client",  # user 변수의 값이 host인 경우 user_type 필드에 host를, client인 경우 client를 저장한다.
         "user": user,
         "expires": time.time() + 3600 * 24,  # 토큰의 만료 시간을 1일으로 설정한다.
     }
@@ -29,6 +27,26 @@ def create_access_token(
     key: 페이로드를 사인하기 위한 키.
     algorithm: payload를 사인 및 암호화하는 알고리즘으로, 기본값인 HS256 알고리즘이 가장 많이 사용된다.
     """
+    token = jwt.encode(
+        payload,
+        settings.SECRET_KEY,
+        algorithm="HS256",
+    )
+    return token
+
+
+def create_refresh_token(
+    user_type: str,
+    user: str,
+) -> str:
+    """
+    사용자 이름을 받아서 새로운 Refresh 토큰을 생성한다. 이 토큰은 더 오랜 기간 동안 유효하다.
+    """
+    payload = {
+        "user_type": user_type,
+        "user": user,
+        "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
+    }
     token = jwt.encode(
         payload,
         settings.SECRET_KEY,
@@ -94,17 +112,6 @@ async def verify_access_token(token: str) -> dict:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid JWTError token",
         ) from exc
-
-
-# 사용자 이름을 받아서 새로운 Refresh 토큰을 생성합니다. 이 토큰은 더 오랜 기간 동안 유효하다.
-def create_refresh_token(user_type: str, user: str) -> str:
-    payload = {
-        "user_type": user_type,
-        "email": user,
-        "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
-    }
-    token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-    return token
 
 
 # Refresh 토큰 검증 및 엑세스 토큰 재발급: 클라이언트가 엑세스 토큰을 사용하다가 만료되면, Refresh 토큰을 사용하여 새로운 엑세스 토큰을 발급한다.
