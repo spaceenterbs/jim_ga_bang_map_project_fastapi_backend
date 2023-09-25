@@ -7,7 +7,7 @@ from auth.jwt_handler import create_access_token, create_refresh_token
 from database.connections import Database
 
 from auth.hash_password import HashPassword
-from auth.authenticate import authenticate, authenticate
+from auth.authenticate import authenticate_client, authenticate_host
 from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
@@ -92,8 +92,8 @@ async def sign_host_in(
     if hash_password.verify_hash(
         host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token("host", host_exist.email)
-        refresh_token = create_refresh_token("host", host_exist.email)
+        access_token = create_access_token(host_exist.email)
+        refresh_token = create_refresh_token(host_exist.email)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -124,8 +124,8 @@ async def sign_client_in(
     if hash_password.verify_hash(
         client.password, client_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token("client", client_exist.email)
-        refresh_token = create_refresh_token("client", client_exist.email)
+        access_token = create_access_token(client_exist.email)
+        refresh_token = create_refresh_token(client_exist.email)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -145,7 +145,7 @@ async def sign_client_in(
 @host_router.put("/update", response_model=Host)
 async def update_host(
     host_update: HostUpdate,
-    current_user: Host = Depends(authenticate),
+    current_user: Host = Depends(authenticate_host),
 ):
     """
     현재 호스트 정보를 업데이트합니다.
@@ -177,7 +177,7 @@ async def update_host(
 
 @client_router.put("/update", response_model=Client)
 async def update_client(
-    client_update: ClientUpdate, current_user: Client = Depends(authenticate)
+    client_update: ClientUpdate, current_user: Client = Depends(authenticate_client)
 ):
     """
     생성 목적: 현재 클라이언트 정보를 수정합니다.
@@ -205,7 +205,7 @@ async def update_client(
 
 
 @host_router.delete("/delete")
-async def delete_host(current_host: Host = Depends(authenticate)):
+async def delete_host(current_host: Host = Depends(authenticate_host)):
     """
     생성 목적: 현재 호스트 정보를 삭제합니다.
     \n
@@ -216,7 +216,7 @@ async def delete_host(current_host: Host = Depends(authenticate)):
 
 
 @client_router.delete("/delete")
-async def delete_client(current_client: Client = Depends(authenticate)):
+async def delete_client(current_client: Client = Depends(authenticate_client)):
     """
     생성 목적: 현재 클라이언트 정보를 삭제합니다.
     \n

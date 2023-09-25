@@ -1,6 +1,6 @@
 # 사용자 처리용 모델을 정의
 from typing import Optional
-from beanie import Document
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr
 
 # from beanie.models import init_model
@@ -10,6 +10,7 @@ class Host(Document):
     email: EmailStr
     password: str
     hostName: str
+    # creator_id: PydanticObjectId  # 사용자 ID를 연결하는 필드
     # image: str
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
@@ -32,7 +33,7 @@ class Host(Document):
 class HostUpdate(BaseModel):
     password: Optional[str]
     hostName: Optional[str]
-    image: Optional[str]
+    # image: Optional[str]
 
     model_config = {
         "json_schema_extra": {
@@ -40,7 +41,7 @@ class HostUpdate(BaseModel):
                 {
                     "password": "jim",
                     "hostName": "gabang",
-                    "image": "https://linktomyimage.com/image.png",
+                    # "image": "https://linktomyimage.com/image.png",
                 }
             ]
         }
@@ -51,6 +52,7 @@ class Client(Document):
     email: EmailStr
     password: str
     clientName: str
+    # creator_id: PydanticObjectId  # 사용자 ID를 연결하는 필드
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "clients"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.

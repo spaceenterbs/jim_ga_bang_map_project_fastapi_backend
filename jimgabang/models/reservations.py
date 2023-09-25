@@ -14,6 +14,7 @@ class ServiceBookingRelation(Document):
 # models 폴더의 모델 파일을 변경하여 몽고DB 문서를 사용할 수 있도록 한다.
 class Service(Document):
     # id: int
+    # creator_id: PydanticObjectId
     creator: Optional[str]  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
     serviceName: str
     category: str
@@ -21,10 +22,10 @@ class Service(Document):
     latitude: float
     longitude: float
     serviceTime: str
-    serviceDate: List[date]
+    serviceDate: List[str]
     availableBag: int
     totalAvailableBag: int
-    bookings: List[PydanticObjectId]
+    # bookings: List[Booking]
 
     model_config = {
         "json_schema_extra": {
@@ -50,24 +51,21 @@ class Service(Document):
 
 class Booking(Document):
     # id: int
+    # creator_id: PydanticObjectId
     creator: Optional[str]  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     bookingDate: List[date]
     bookingBag: int
     confirm: bool = False
-    services: List[PydanticObjectId]
+    # services: List[PydanticObjectId]
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "summary": "이벤트 제목",
-                    "description": "이벤트 설명",
-                    "value": {
-                        "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                        "bookingBag": 5,
-                        "confirm": False,
-                    },
-                }
+                    "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "bookingBag": 5,
+                    "confirm": False,
+                },
             ]
         }
     }
