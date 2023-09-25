@@ -14,9 +14,12 @@ from fastapi.security import (
     OAuth2PasswordBearer,
 )  # OAuth2PasswordBearer = 보안 로직이 존재한다는 것을 앱에 알려준다.
 from auth.jwt_handler import (
+    create_access_token,
+    create_refresh_token,
     verify_host_access_token,
     verify_client_access_token,
-    # verify_refresh_token,
+    verify_host_refresh_token,
+    verify_client_refresh_token,
 )  # 앞서 정의한 토큰 생성 및 검증 함수로, 토큰의 유효성을 확인한다. # refresh token을 검증하는 함수 추가
 
 
@@ -31,33 +34,83 @@ refresh_oauth2_scheme = OAuth2PasswordBearer(
 
 
 async def authenticate_host(
-    token: str = Depends(oauth2_scheme),  # 토큰을 인수로 받는다.
+    access_token: str = Depends(oauth2_scheme),
+    refresh_token: str = Depends(oauth2_scheme),  # refresh_token을 인수로 추가한다.
 ) -> str:
-    if not token:
+    """
+    Depends 기능을 사용하여 인증을 처리한다.
+    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
+    함수는 refresh_token이라는 매개변수를 받고. 이 매개변수는 refresh_oauth2_scheme을 통해 주입된다.
+    """
+    if not access_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sign in for access",
         )
 
-    decoded_token = await verify_host_access_token(  # await를 사용하여 코루틴 실행
-        token
-    )  # 토큰이 유효하면 토큰을 디코딩한 후 페이로드의 사용자 필드를 반환한다.
-    return decoded_token["user"]
+    decoded_access_token = await verify_host_access_token(access_token)
+    user = decoded_access_token["user"]
+
+    # 여기서 refresh_token을 사용하여 새로운 access_token이 유효한지 확인한다.
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token is missing",
+        )
+
+    decoded_refresh_token = await verify_host_refresh_token(refresh_token)
+
+    # Refresh 토큰이 유효한지 확인
+    if decoded_access_token["user"] != decoded_refresh_token["user"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Mismatched access and refresh tokens",
+        )
+
+    # 새로운 access 토큰 발급
+    new_access_token = create_access_token(user)
+
+    return new_access_token
 
 
 async def authenticate_client(
-    token: str = Depends(oauth2_scheme),  # 토큰을 인수로 받는다.
+    access_token: str = Depends(oauth2_scheme),
+    refresh_token: str = Depends(oauth2_scheme),  # refresh_token을 인수로 추가한다.
 ) -> str:
-    if not token:
+    """
+    Depends 기능을 사용하여 인증을 처리한다.
+    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
+    함수는 refresh_token이라는 매개변수를 받고. 이 매개변수는 refresh_oauth2_scheme을 통해 주입된다.
+    """
+    if not access_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sign in for access",
         )
 
-    decoded_token = await verify_client_access_token(  # await를 사용하여 코루틴 실행
-        token
-    )  # 토큰이 유효하면 토큰을 디코딩한 후 페이로드의 사용자 필드를 반환한다.
-    return decoded_token["user"]
+    decoded_access_token = await verify_client_access_token(access_token)
+    user = decoded_access_token["user"]
+
+    # 여기서 refresh_token을 사용하여 새로운 access_token이 유효한지 확인한다.
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token is missing",
+        )
+
+    decoded_refresh_token = await verify_client_refresh_token(refresh_token)
+
+    # Refresh 토큰이 유효한지 확인
+    if decoded_access_token["user"] != decoded_refresh_token["user"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Mismatched access and refresh tokens",
+        )
+
+    # 새로운 access 토큰 발급
+    new_access_token = create_access_token(user)
+
+    return new_access_token
 
 
 # async def authenticate(
@@ -122,6 +175,7 @@ async def authenticate_client(
 
 """""" """""" """""" """""" """""" """""" """"""
 """""" """""" """""" """""" """""" """""" """"""
+
 
 # async def authenticate(
 #     access_token: Annotated[

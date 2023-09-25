@@ -48,19 +48,19 @@ async def verify_host_access_token(token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Token expired!",
+                detail="Refresh token expired",
             )
         user_exist = await Host.find_one(Host.email == data["user"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid token",
+                detail="Invalid access token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as exec:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid token",
+            detail="Invalid JWTError refresh token",
         ) from exec
 
 
@@ -81,19 +81,109 @@ async def verify_client_access_token(token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Token expired!",
+                detail="Refresh token expired",
             )
         user_exist = await Client.find_one(Client.email == data["user"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid token",
+                detail="Invalid access token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as exec:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid token",
+            detail="Invalid JWTError refresh token",
+        ) from exec
+
+
+"""
+=====================================================================================
+"""
+
+
+def create_refresh_token(
+    # user_type: str,
+    user: str,
+) -> str:
+    """
+    사용자 이름을 받아서 새로운 Refresh 토큰을 생성한다. 이 토큰은 더 오랜 기간 동안 유효하다.
+    """
+    payload = {
+        # "user_type": user_type,
+        "user": user,
+        "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
+    }
+    token = jwt.encode(
+        payload,
+        settings.SECRET_KEY,
+        algorithm="HS256",
+    )
+    return token
+
+
+# 앱에 전달된 refresh 토큰을 검증하는 함수
+async def verify_host_refresh_token(token: str) -> dict:
+    try:
+        # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
+        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        expire = data.get("expires")
+
+        if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No refresh token supplied",
+            )
+        if datetime.utcnow() > datetime.utcfromtimestamp(
+            expire
+        ):  # 토큰의 만료 시간이 지났는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Refresh token expired!",
+            )
+        user_exist = await Host.find_one(Host.email == data["user"])
+        if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid refresh token",
+            )
+        return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
+    except JWTError as exec:  # JWT 요청 자체에 오류가 있는지 확인한다.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JWTError refresh token",
+        ) from exec
+
+
+async def verify_client_refresh_token(token: str) -> dict:
+    try:
+        # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
+        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        expire = data.get("expires")
+
+        if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No refresh token supplied",
+            )
+        if datetime.utcnow() > datetime.utcfromtimestamp(
+            expire
+        ):  # 토큰의 만료 시간이 지났는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Refresh token expired!",
+            )
+        user_exist = await Client.find_one(Client.email == data["user"])
+        if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid refresh token",
+            )
+        return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
+    except JWTError as exec:  # JWT 요청 자체에 오류가 있는지 확인한다.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JWTError refresh token",
         ) from exec
 
 
@@ -185,32 +275,6 @@ async def verify_client_access_token(token: str) -> dict:
 #             status_code=status.HTTP_400_BAD_REQUEST,
 #             detail="Invalid JWTError token",
 #         ) from exc
-
-
-"""
-=====================================================================================
-"""
-
-
-def create_refresh_token(
-    # user_type: str,
-    user: str,
-) -> str:
-    """
-    사용자 이름을 받아서 새로운 Refresh 토큰을 생성한다. 이 토큰은 더 오랜 기간 동안 유효하다.
-    """
-    payload = {
-        # "user_type": user_type,
-        "user": user,
-        "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
-    }
-    token = jwt.encode(
-        payload,
-        settings.SECRET_KEY,
-        algorithm="HS256",
-    )
-    return token
-
 
 # async def verify_refresh_token(refresh_token: str) -> str:
 #     """

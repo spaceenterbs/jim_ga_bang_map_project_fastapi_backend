@@ -25,7 +25,7 @@ class Service(Document):
     serviceDate: List[str]
     availableBag: int
     totalAvailableBag: int
-    # bookings: List[Booking]
+    bookings: List[PydanticObjectId]
 
     model_config = {
         "json_schema_extra": {
@@ -56,7 +56,7 @@ class Booking(Document):
     bookingDate: List[date]
     bookingBag: int
     confirm: bool = False
-    # services: List[PydanticObjectId]
+    services: List[PydanticObjectId]
 
     model_config = {
         "json_schema_extra": {
