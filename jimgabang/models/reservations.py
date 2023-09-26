@@ -1,19 +1,14 @@
 # 이벤트 처리용 모델을 정의
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from beanie import Document
 from datetime import date
 from typing import Optional, List
 from beanie import PydanticObjectId
 
 
-class ServiceBookingRelation(Document):
-    service_id: PydanticObjectId
-    booking_id: PydanticObjectId
-
-
 # models 폴더의 모델 파일을 변경하여 몽고DB 문서를 사용할 수 있도록 한다.
 class Service(Document):
-    creator: Optional[str]  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
+    creator: EmailStr  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
     service_name: str
     category: str
     address: str
@@ -29,6 +24,7 @@ class Service(Document):
         "json_schema_extra": {
             "examples": [
                 {
+                    "creator": "jimgabang@gmail.com",
                     "sevice_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
@@ -38,6 +34,7 @@ class Service(Document):
                     "service_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
                     "available_bag": 5,
                     "totalAvailable_bag": 5,
+                    "bookings": [],
                 }
             ]
         }
@@ -48,7 +45,7 @@ class Service(Document):
 
 
 class Booking(Document):
-    creator: Optional[str]  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
+    creator: EmailStr  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     booking_date: List[date]
     booking_bag: int
     confirm: bool = False
@@ -58,9 +55,11 @@ class Booking(Document):
         "json_schema_extra": {
             "examples": [
                 {
+                    "creator": "jimgabang@gmail.com",
                     "booking_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
                     "booking_bag": 5,
                     "confirm": False,
+                    "services": "612c1c1c3e6a7f5f5a7f5f5a",
                 },
             ]
         }
@@ -77,7 +76,7 @@ class ServiceUpdate(BaseModel):
     latitude: Optional[float]
     longitude: Optional[float]
     service_time: Optional[str]
-    service_date: Optional[List[date]]
+    service_date: Optional[List[str]]
     available_bag: Optional[int]
     totalAvailable_bag: Optional[int]
 
@@ -101,7 +100,7 @@ class ServiceUpdate(BaseModel):
 
 
 class BookingUpdate(BaseModel):
-    booking_date: Optional[List[date]]
+    booking_date: Optional[List[str]]
     booking_bag: Optional[int]
 
     model_config = {
