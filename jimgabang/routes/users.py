@@ -3,7 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import (
     OAuth2PasswordRequestForm,
 )  # 인증 정보(사용자명과 패스워드)를 추출하기 위해 로그인 라우트에 주입될 것
-from auth.jwt_handler import create_access_token, create_refresh_token
+from auth.jwt_handler import (
+    create_access_token,
+    create_refresh_token,
+    verify_host_refresh_token,
+    verify_client_refresh_token,
+)
 from database.connections import Database
 
 from auth.hash_password import HashPassword
@@ -86,6 +91,41 @@ async def sign_host_in(
     )
 
 
+@host_router.post("host/refresh-token", response_model=TokenResponse)
+async def refresh_host_access_token(
+    host: OAuth2PasswordRequestForm = Depends(),
+) -> dict:
+    """
+    refresh 토큰으로 access 토큰을 갱신한다.
+    """
+    host_exist = await Host.find_one(Host.email == host.username)
+
+    if not host_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host with email does not exist.",
+        )
+
+    # refresh 토큰을 검증한다.
+    decoded_refresh_token = verify_host_refresh_token(
+        host.password
+    )  # host.password는 host.refresh_token이 대입된 값이다.
+
+    if decoded_refresh_token["user"] == host.username:
+        # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
+        access_token = create_access_token(host_exist.email)
+
+        return {
+            "access_token": access_token,
+            "token_type": "Bearer",
+        }
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid host email passed",
+    )
+
+
 @client_router.post("/signup")
 async def sign_new_client_up(client: Client) -> dict:
     """
@@ -137,6 +177,41 @@ async def sign_client_in(
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid details passed",
+    )
+
+
+@client_router.post("client/refresh-token", response_model=TokenResponse)
+async def refresh_client_access_token(
+    client: OAuth2PasswordRequestForm = Depends(),
+) -> dict:
+    """
+    refresh 토큰으로 access 토큰을 갱신한다.
+    """
+    client_exist = await Client.find_one(Client.email == client.username)
+
+    if not client_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client with email does not exist.",
+        )
+
+    # refresh 토큰을 검증한다.
+    decoded_refresh_token = verify_client_refresh_token(
+        client.password
+    )  # client.password는 client.refresh_token이 대입된 값이다.
+
+    if decoded_refresh_token["user"] == client.username:
+        # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
+        access_token = create_access_token(client_exist.email)
+
+        return {
+            "access_token": access_token,
+            "token_type": "Bearer",
+        }
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid client email passed",
     )
 
 
