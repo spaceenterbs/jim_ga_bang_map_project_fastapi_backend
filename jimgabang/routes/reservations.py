@@ -24,7 +24,6 @@ service_database = Database(Service)
 booking_database = Database(Booking)
 
 
-# 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
 @service_router.get("/", response_model=List[Service])
 async def retrieve_all_services() -> List[Service]:
     """
@@ -38,8 +37,7 @@ async def retrieve_all_services() -> List[Service]:
     return services
 
 
-# 호스트가 자신이 만든 서비스를 가져오는 API
-@service_router.get("/host", response_model=List[Service])
+@service_router.get("/host/{current_user}", response_model=List[Service])
 async def retrieve_all_services_by_host(
     current_user: Host = Depends(authenticate_host),
 ) -> List[Service]:
@@ -87,45 +85,45 @@ async def retrieve_service(id: PydanticObjectId) -> Service:
 # 이벤트 생성 및 삭제 라우트를 정의한다.
 @service_router.post("/new")
 async def create_service(
-    body: Service, host: str = Depends(authenticate_host)
+    body: Service, host: Host = Depends(authenticate_host)
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     """
     생성 목적: 호스트가 새로운 자신의 서비스를 생성한다.
     \n
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신의 서비스를 생성하기 위해 사용된다.
     """
-    body.creator = host  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
+    body.creator = host.email  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
     await service_database.save(body)
     return {
         "message": "Service created successfully",
     }
 
 
-@service_router.delete("/{service_id}")
-async def delete_service(
-    service_id: PydanticObjectId, host: str = Depends(authenticate_host)
-) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-    """
-    생성 목적: 호스트가 자신의 서비스를 삭제한다.
-    \n
-    호스트 admin 페이지에서 호스트 인증된 사용자에게 자신의 서비스를 삭제하기 위해 사용된다.
-    """
-    service = await service_database.get(service_id)
-    if service.creator != host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Operation not allowed",
-        )
-    if not service:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service with supplied ID does not exist",
-        )
-    await service_database.delete(id)
+# @service_router.delete("/{service_id}")
+# async def delete_service(
+#     service_id: PydanticObjectId, host: str = Depends(authenticate_host)
+# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+#     """
+#     생성 목적: 호스트가 자신의 서비스를 삭제한다.
+#     \n
+#     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신의 서비스를 삭제하기 위해 사용된다.
+#     """
+#     service = await service_database.get(service_id)
+#     if service.creator != host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Operation not allowed",
+#         )
+#     if not service:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Service with supplied ID does not exist",
+#         )
+#     await service_database.delete(id)
 
-    return {
-        "message": "Service deleted successfully",
-    }
+#     return {
+#         "message": "Service deleted successfully",
+#     }
 
 
 @service_router.put("/{service_id}", response_model=Service)
