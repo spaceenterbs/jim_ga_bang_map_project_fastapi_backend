@@ -13,80 +13,105 @@ from pydantic import BaseModel
 from models.users import Host, Client
 from models.reservations import Service, Booking
 
+"""
+Beanie ORM과 MongoDB를 사용하여 데이터베이스 연결 및 CRUD(Create, Read, Update, Delete) 작업을 처리하는 클래스와 함수들을 정의
+"""
 
-# 데이터베이스를 초기화하는 메서드를 갖고 있다. 환경 변수를 읽어오는 클래스를 정의한다.
+
 class Settings(BaseSettings):
     """
-    DB 초기화와 관련된 설정을 다루는 데 사용된다.
-    환경 변수를 읽어오며 'initialize_database'메서드를 통해 DB 초기화 작업을 수행한다.
+    DB 연결 설정과 관련된 정보를 저장한다.
+    'initialize_database'메서드를 통해 DB 초기화 작업을 수행한다.
     또한 .env 파일에서 환경 변수를 읽어온다.
     """
 
     SECRET_KEY: Optional[str] = None
-    DATABASE_URL: Optional[str] = "default"
+    DATABASE_URL: Optional[str] = "default"  # 기본값을 설정한다.
 
-    async def initialize_database(self):  # 데이터베이스를 초기화하는 메서드를 정의한다.
-        client = AsyncIOMotorClient(
-            self.DATABASE_URL
-        )  # AsyncIOMotorClient는 비동기로 작동하는 몽고DB 클라이언트이다.
-        await init_beanie(  # db 클라이언트를 설정한다. SQLModel에서 생성한 몽고 엔진 버전과 문서 모델을 인수로 설정한다.
+    async def initialize_database(self):
+        """
+        비동기 방식으로 DB 연결을 초기화하는 메서드를 정의한다.
+        """
+        client = (
+            AsyncIOMotorClient(  # AsyncIOMotorClient 객체는 MongoDB와 비동기로 통신하기 위한 클라이언트다.
+                self.DATABASE_URL
+            )
+        )
+        """
+        init_beanie는 Beanie ORM 라이브러리에서 제공하는 함수이다.
+        MongoDB의 연결을 초기화하고 사용할 문서 모델들을 설정한다. 이 함수는 비동기 방식으로 동작하므로 호출 시에는 await 키워드를 사용해야 한다.
+        """
+        await init_beanie(
             database=client.get_default_database(),
             document_models=[Host, Client, Service, Booking],
         )
+        """
+        init_beanie 함수는 두 가지 인자를 받는다.
+        1. database: MongoDB 클라이언트(AsyncIOMotorClient)의 get_default_database() 메서드를 통해 기본 데이터베이스를 얻어온다. 이 데이터베이스가 Beanie와 연결될 대상이다.
+        2. document_models: Beanie에서 사용할 Pydantic 기반의 문서 모델들(Host, Client, Service, Booking)을 리스트 형태로 전달한다. 이 모델들은 MongoDB의 컬렉션과 매핑되며, 각각의 모델은 해당 컬렉션의 문서와 매핑된다.
+        """
 
     class Config:  # db URL을 .env 파일에서 읽어온다.
         env_file = ".env"
 
 
-class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중에 사용되는 모델은 Event 또는 User 문서의 모델이다.
+class Database:
     """
-    모델을 인수로 받아서 해당 모델과 상호작용하는 여러 메서드를 제공한다.
-    save() 메서드는 문서를 인수로 받아서 db에 저장한다.
-    find_one() 메서드는 쿼리를 인수로 받아서 일치하는 문서를 반환한다.
-    find_all() 메서드는 컬렉션에 있는 모든 문서를 반환한다.
-    get() 메서드는 ID를 인수로 받아서 컬렉션에서 일치하는 레코드를 불러온다.
-    get_all() 메서드는 인수가 없고 컬렉션에 있는 모든 레코드를 불러온다.
-    find() 메서드는 쿼리를 인수로 받아서 일치하는 레코드를 반환한다.
-    update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인수로 받아서, 클라이언트가 보낸 PUT 요청에 의해 변경된 필드를 업데이트한다.
-    delete() 메서드는 해당 레코드가 있는지 확인하고 있으면 삭제한다.
-    delete_all() 메서드는 컬렉션에 있는 모든 레코드를 삭제한다.
+    모델을 인자로 받아서 해당 모델과 상호작용하는 여러 메서드(CRUD 작업)를 제공한다.
     """
 
     def __init__(self, model):
         self.model = model
 
-    async def save(
-        self, document
-    ) -> None:  # 문서를 인수로 받는 save() 메서드를 정의한다. 문서의 인스턴스를 받아서 db 인스턴스에 전달한다.
+    async def save(self, document) -> None:
+        """
+        save() 메서드는 Beanie 문서를 인자로 받아서 db에 저장한다.
+        create() 메서드는 Beanie에서 제공하는 메서드로, 문서 객체를 db에 저장하는 역할을 한다.
+        """
         await document.create()
         return
 
     async def find_one(self, query):
+        """
+        find_one() 메서드는 쿼리를 인자로 받아서 일치하는 첫 번째 문서를 반환한다.
+        일치하는 문서가 없으면 None을 반환한다.
+        """
         return await self.model.get_or_none(**query)
 
     async def find_all(self):
+        """
+        find_all() 메서드는 컬렉션에 있는 모든 문서를 리스트 형태로 반환한다.
+        """
         return await self.model.all().to_list()
 
     async def get(
-        self, id: PydanticObjectId
-    ) -> bool:  # ID를 인수로 받아 컬렉션에서 일치하는 레코드를 불러온다.
+        self, id: PydanticObjectId  # ID를 인자로 받아 컬렉션에서 일치하는 레코드를 불러온다.
+    ) -> bool:
+        """
+        get() 메서드는 ID를 인자로 받아서 컬렉션에서 일치하는 레코드를 반환한다.
+        찾지 못하면 False를 반환한다.
+        """
         doc = await self.model.get(id)
         if doc:
             return doc
         return False
 
-    async def get_all(self) -> List[Any]:  # 인수가 없고 컬렉션에 있는 모든 레코드를 불러온다.
+    async def get_all(self) -> List[Any]:
+        """
+        get_all() 메서드는 인자가 없고 컬렉션에 있는 모든 레코드를 리스트 형태로 반환한다.
+        """
         docs = await self.model.find_all().to_list()
         return docs
 
-    async def find(self, query):  # 주어진 쿼리에 해당하는 모든 문서를 반환한다.
+    async def find(self, query):
+        """
+        find() 메서드는 쿼리를 인자로 받아서 일치하는 모든 레코드를 반환한다.
+        """
         return await self.model.filter(**query).all().to_list()
 
-    async def update(
-        self, id: PydanticObjectId, body: BaseModel
-    ) -> Any:  # update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인수로 받는다. 주어진 문서 id와 업데이트할 내용인 body를 인자로 받아 해당 id를 가진 문서의 내용을 업데이트한다.
+    async def update(self, id: PydanticObjectId, body: BaseModel) -> Any:
         """
-        update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인수로 받아서,
+        update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인자로 받아서,
         클라이언트가 보낸 PUT 요청에 의해 변경된 필드를 업데이트한다.
         None 값은 제외되며, 변경 쿼리는 beanie의 update() 메서드를 통해 실행된다.
         """
@@ -111,7 +136,7 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
 
     async def delete(self, id: PydanticObjectId) -> bool:
         """
-        해당 레코드가 있는지 확인하고 있으면 삭제한다.
+        delete() 메서드는 해당 레코드가 있는지 확인하고 있으면 삭제한다.
         """
         doc = await self.get(id)
         if not doc:
@@ -120,5 +145,8 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
         return True
 
     async def delete_all(self):
+        """
+        delete_all() 메서드는 컬렉션에 있는 모든 레코드를 삭제한다.
+        """
         await self.model.delete_all()
         return True
