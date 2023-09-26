@@ -82,7 +82,7 @@ class Database:  # 초기화 시 모델을 인수로 받는다. db 초기화 중
     async def find(self, query):  # 주어진 쿼리에 해당하는 모든 문서를 반환한다.
         return await self.model.filter(**query).all().to_list()
 
-    async def update(  #
+    async def update(
         self, id: PydanticObjectId, body: BaseModel
     ) -> Any:  # update() 메서드는 하나의 ID와 pydantic 스키마(모델)를 인수로 받는다. 주어진 문서 id와 업데이트할 내용인 body를 인자로 받아 해당 id를 가진 문서의 내용을 업데이트한다.
         """

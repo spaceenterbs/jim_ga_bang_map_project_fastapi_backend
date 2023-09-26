@@ -31,7 +31,9 @@ class Service(Document):
                     "latitude": 37.123456,
                     "longitude": 37.123456,
                     "service_time": "09:00 ~ 18:00",
-                    "service_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "service_date": [
+                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                    ],
                     "available_bag": 5,
                     "totalAvailable_bag": 5,
                     "bookings": [],
@@ -56,7 +58,9 @@ class Booking(Document):
             "examples": [
                 {
                     "creator": "jimgabang@gmail.com",
-                    "booking_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "booking_date": [
+                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                    ],
                     "booking_bag": 5,
                     "confirm": False,
                     "services": "612c1c1c3e6a7f5f5a7f5f5a",
@@ -90,7 +94,9 @@ class ServiceUpdate(BaseModel):
                     "latitude": 37.123456,
                     "longitude": 37.123456,
                     "service_time": "09:00 ~ 18:00",
-                    "service_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "service_date": [
+                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                    ],
                     "available_bag": 5,
                     "totalAvailable_bag": 5,
                 }
@@ -107,7 +113,9 @@ class BookingUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "booking_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "booking_date": [
+                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                    ],
                     "booking_bag": 5,
                 }
             ]

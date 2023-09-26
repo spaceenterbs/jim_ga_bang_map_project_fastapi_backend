@@ -13,7 +13,6 @@ from models.reservations import (
 from typing import List
 from auth.authenticate import authenticate_host, authenticate_client
 
-
 service_router = APIRouter(
     tags=["Service"],
 )
@@ -24,8 +23,6 @@ booking_router = APIRouter(
 service_database = Database(Service)
 booking_database = Database(Booking)
 
-# services = []
-
 
 # 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
 @service_router.get("/", response_model=List[Service])
@@ -35,7 +32,9 @@ async def retrieve_all_services() -> List[Service]:
     \n
     지도 상에서 모든 서비스를 보여주기 위해 사용된다.
     """
-    services = await service_database.get_all()
+    services = (
+        await service_database.get_all()
+    )  # Service.find_all().to_list()  # 모든 서비스를 추출한다.
     return services
 
 
@@ -53,51 +52,36 @@ async def retrieve_all_services_by_host(
     return services
 
 
-# async def some_function(host: str = Depends(authenticate)):
-#     # host 매개변수는 현재 요청을 보낸 사용자의 이메일 또는 식별자를 포함한다.
+# 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
+@service_router.get("/{id}", response_model=Service)
+async def retrieve_service(id: PydanticObjectId) -> Service:
+    service = await service_database.get(id)
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="service with supplied ID does not exist",
+        )
+    return service
 
-#     # 이 정보를 사용하여 데이터베이스에서 호스트 정보를 검색할 수 있다.
-#     host_info = await get_host_info_from_database(host)
 
-#     # 이제 host_info를 사용하여 호스트 정보에 액세스할 수 있다.
-#     host_email = host_info.email
-
-
-# # 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
-# @service_router.get("/{id}", response_model=Service)
-# async def retrieve_service(id: PydanticObjectId) -> Service:
-#     '''
-#     생성 목적: 특정 ID의 서비스를 추출한다.
+# # host의 서비스 추출
+# @service_router.get("/host/{service_id}", response_model=Service)
+# async def get_service_by_id(
+#     service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+# ) -> Service:
+#     """
+#     생성 목적: 호스트 자신이 만든 특정 ID의 서비스를 추출한다.
 #     \n
-#     지도 상에서 특정 서비스를 보여주기 위해 사용된다.
-#     '''
-#     service = await service_database.get(id)
+#     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 특정 서비스를 보여주기 위해 사용된다.
+#     """
+#     # 호스트가 자신의 서비스 중에서 service_id에 해당하는 서비스를 가져옵니다.
+#     service = await Service.get(document_id=service_id, creator=current_user.email)
 #     if not service:
 #         raise HTTPException(
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Service with supplied ID does not exist",
 #         )
 #     return service
-
-
-# host의 서비스 추출
-@service_router.get("/host/{service_id}", response_model=Service)
-async def get_service_by_id(
-    service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-) -> Service:
-    """
-    생성 목적: 호스트 자신이 만든 특정 ID의 서비스를 추출한다.
-    \n
-    호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 특정 서비스를 보여주기 위해 사용된다.
-    """
-    # 호스트가 자신의 서비스 중에서 service_id에 해당하는 서비스를 가져옵니다.
-    service = await Service.get(document_id=service_id, creator=current_user.email)
-    if not service:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service with supplied ID does not exist",
-        )
-    return service
 
 
 # 이벤트 생성 및 삭제 라우트를 정의한다.
@@ -112,7 +96,6 @@ async def create_service(
     """
     body.creator = host  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
     await service_database.save(body)
-    # services.append(body)
     return {
         "message": "Service created successfully",
     }
@@ -171,10 +154,19 @@ async def update_service(
     return updated_service
 
 
+@service_router.delete("/delete-all")
+async def delete_all_services():
+    """
+    생성 목적: 테스트를 위해 모든 서비스를 삭제한다.
+    \n
+    """
+    await service_database.delete_all()
+    return {
+        "message": "All Services deleted successfully",
+    }
+
+
 """""" """""" """""" """""" """""" """""" """""" """""" """""" """""" """"""
-
-# bookings = []
-
 
 # # 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
 # @booking_router.get("/", response_model=List[Booking])
@@ -245,18 +237,6 @@ async def get_booking_by_id(
     return booking
 
 
-# @booking_router.post("/new")
-# async def create_booking(
-#     body: Booking, client: str = Depends(authenticate)
-# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-#     body.creator = client  # 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
-#     await booking_database.save(body)
-#     # bookings.append(body)
-#     return {
-#         "message": "Booking created successfully",
-#     }
-
-
 # 예약 생성 API
 @booking_router.post("/new", response_model=Booking)
 async def create_booking(body: Booking, client: str = Depends(authenticate_client)):
@@ -289,28 +269,6 @@ async def create_booking(body: Booking, client: str = Depends(authenticate_clien
     await service_database.save(service)
 
     return body
-
-
-# @booking_router.delete("/{booking_id}")
-# async def delete_booking(
-#     booking_id: PydanticObjectId, client: str = Depends(authenticate)
-# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
-#     booking = await booking_database.get(booking_id)
-#     if booking.creator != client:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Operation not allowed",
-#         )
-#     if not booking:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Booking with supplied ID does not exist",
-#         )
-#     await booking_database.delete(booking_id)
-
-#     return {
-#         "message": "Booking deleted successfully",
-#     }
 
 
 # 예약 취소 API
@@ -393,30 +351,3 @@ async def update_booking_confirm(
             detail="No Booking update has been made",
         )
     return updated_booking
-
-
-# # 예약 승인 API
-# @booking_router.put("/{booking_id}/confirm", response_model=Booking)
-# async def update_booking_confirm(
-#     booking_id: PydanticObjectId, host: str = Depends(authenticate)
-# ):
-#     # 예약 정보를 가져옵니다.
-#     booking = await booking_database.get(booking_id)
-#     if not booking:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="Booking with supplied ID does not exist",
-#         )
-
-#     # 호스트만 예약을 승인할 수 있습니다.
-#     if booking.creator != host:
-#         raise HTTPException(
-#             status_code=400,
-#             detail="Operation not allowed",
-#         )
-
-#     # 예약을 승인하고 `confirm` 필드를 업데이트합니다.
-#     booking.confirm = True
-#     await booking_database.save(booking)
-
-#     return booking
