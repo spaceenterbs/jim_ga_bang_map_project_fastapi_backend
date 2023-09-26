@@ -9,6 +9,8 @@ from database.connections import Database
 from auth.hash_password import HashPassword
 from auth.authenticate import authenticate_client, authenticate_host
 from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
+from beanie import PydanticObjectId
+
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
     tags=["Host"],
@@ -26,7 +28,10 @@ hash_password = HashPassword()
 
 
 @host_router.post("/signup")
-async def sign_new_host(host: Host) -> dict:
+async def sign_new_host(
+    host: Host,
+    current_client: Client = Depends(authenticate_client),
+) -> dict:  # 현재 클라이언트를 가져옴
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
     등록 라우트에서는 애플리케이션에 내장된 데이터베이스를 사용한다.
@@ -39,6 +44,10 @@ async def sign_new_host(host: Host) -> dict:
             detail="Host with email provided exists already",
         )
     # 패스워드를 해싱해서 db에 저장하도록 routes/hosts.py의 사용자 등록 라우트를 수정한다.
+
+    # 호스트 문서를 생성할 때 creator_id 필드를 현재 클라이언트의 ID로 설정
+    host.creator_id = current_client.id
+
     """
     이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다.
     """
@@ -47,29 +56,6 @@ async def sign_new_host(host: Host) -> dict:
     await host_database.save(host)
     return {
         "message": "Host created successfully.",
-    }
-
-
-@client_router.post("/signup")
-async def sign_new_client(client: Client) -> dict:
-    """
-    해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
-    """
-    client_exist = await Client.find_one(Client.email == client.email)
-    if client_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Client with email provided exists already",
-        )
-    # 패스워드를 해싱해서 db에 저장하도록 routes/clients.py의 사용자 등록 라우트를 수정한다.
-    """
-    이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다.
-    """
-    hashed_password = hash_password.create_hash(client.password)
-    client.password = hashed_password
-    await client_database.save(client)
-    return {
-        "message": "Client created successfully.",
     }
 
 
@@ -105,6 +91,29 @@ async def sign_host_in(
     )
 
 
+@client_router.post("/signup")
+async def sign_new_client(client: Client) -> dict:
+    """
+    해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
+    """
+    client_exist = await Client.find_one(Client.email == client.email)
+    if client_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Client with email provided exists already",
+        )
+    # 패스워드를 해싱해서 db에 저장하도록 routes/clients.py의 사용자 등록 라우트를 수정한다.
+    """
+    이렇게 하면 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장한다.
+    """
+    hashed_password = hash_password.create_hash(client.password)
+    client.password = hashed_password
+    await client_database.save(client)
+    return {
+        "message": "Client created successfully.",
+    }
+
+
 @client_router.post("/signin", response_model=TokenResponse)
 async def sign_client_in(
     client: OAuth2PasswordRequestForm = Depends(),
@@ -137,18 +146,13 @@ async def sign_client_in(
     )
 
 
-# 이 라우트는 로그인하려는 사용자가 데이터베이스에 존재하는지를 먼저 확인하고, 없으면 예외를 발생시킨다.
-# 사용자가 존재하면 패스워드가 일치하는지 확인해서 성공 또는 실패 메시지를 반환한다.
-# 이후 애플리케이션 내장 데이터베이스를 돕립된 데이터베이스로 옮기는 과정을 다룰 때 암호화를 사용한 패스워드 저장 방식을 다룬다.
-
-
-@host_router.put("/update", response_model=Host)
+@host_router.put("/update/{host_id}", response_model=Host)
 async def update_host(
     host_update: HostUpdate,
     current_user: Host = Depends(authenticate_host),
 ):
     """
-    현재 호스트 정보를 업데이트합니다.
+    현재 호스트 정보를 업데이트한다.
     """
     if host_update.password:
         hashed_password = hash_password.create_hash(host_update.password)
@@ -204,28 +208,6 @@ async def update_client(
     # return updated_client
 
 
-@host_router.delete("/delete")
-async def delete_host(current_host: Host = Depends(authenticate_host)):
-    """
-    생성 목적: 현재 호스트 정보를 삭제합니다.
-    \n
-
-    """
-    await host_database.delete(current_host.id)
-    return {"message": "Host deleted successfully."}
-
-
-@client_router.delete("/delete")
-async def delete_client(current_client: Client = Depends(authenticate_client)):
-    """
-    생성 목적: 현재 클라이언트 정보를 삭제합니다.
-    \n
-
-    """
-    await client_database.delete(current_client.id)
-    return {"message": "Client deleted successfully."}
-
-
 @host_router.get("/get-all", response_model=list[Host])
 async def get_all_hosts():
     """
@@ -272,19 +254,104 @@ async def get_client(client_id: int):
     return client
 
 
-@host_router.delete("/delete-all")
-async def delete_all_hosts():
+@host_router.delete("/delete")
+async def delete_host(current_host: Host = Depends(authenticate_host)):
     """
-    모든 호스트 정보를 삭제합니다.
+    생성 목적: 현재 호스트 정보를 삭제합니다.
+    \n
+
     """
-    await host_database.delete_all()
-    return {"message": "All hosts deleted successfully."}
+    await host_database.delete(current_host.id)
+    return {"message": "Host deleted successfully."}
 
 
-@client_router.delete("/delete-all")
-async def delete_all_clients():
-    """
-    모든 클라이언트 정보를 삭제합니다.
-    """
-    await client_database.delete_all()
-    return {"message": "All clients deleted successfully."}
+@client_router.delete("/{client_id}")
+async def delete_client(
+    client_id: PydanticObjectId,  # 삭제할 Client 계정의 ID를 받는다.
+    current_client: Client = Depends(authenticate_client),
+):
+    # 1. 클라이언트가 요청한 Client ID와 현재 인증된 클라이언트 ID를 비교한다.
+    if client_id != current_client.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: You can only delete your own account",
+        )
+
+    # 2. Client 계정을 삭제하기 전에 존재하는지 확인한다.
+    client = await Client.get(client_id)
+    if not client:
+        raise HTTPException(
+            status_code=404,
+            detail="Client account not found",
+        )
+
+    # 3. Client 계정을 삭제한다.
+    await client.delete()
+
+    return None  # 삭제 작업이 성공하면 응답이 없음을 나타내기 위해 None을 반환한다.
+
+
+# @client_router.delete("/{client_email}")
+# async def delete_client_email(
+#     client_email: str,  # 삭제할 Client 계정의 email을 받습니다.
+#     current_client: Client = Depends(authenticate_client),
+# ):
+#     # 1. 클라이언트가 요청한 email과 현재 인증된 클라이언트의 email을 비교합니다.
+#     if client_email != current_client.email:
+#         raise HTTPException(
+#             status_code=403,
+#             detail="Forbidden: You can only delete your own account",
+#         )
+
+#     # 2. email을 사용하여 Client 계정을 찾습니다.
+#     client = await Client.get(email=client_email)
+#     if not client:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="Client account not found",
+#         )
+
+#     # 3. Client 계정을 삭제합니다.
+#     await client.delete()
+
+#     return None  # 삭제 작업이 성공하면 응답이 없음을 나타내기 위해 None을 반환합니다.
+
+
+# @client_router.delete("/{client_id}")
+# async def delete_client(
+#     id: PydanticObjectId, client: str = Depends(authenticate_client)
+# ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+#     client = await client_database.get(client_id)
+#     if client.creator != user:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Operation not allowed",
+#         )
+#     if not event:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Event with supplied ID does not exist",
+#         )
+#     await client_database.delete(client_id)
+
+#     return {
+#         "message": "Event deleted successfully",
+#     }
+
+
+# @host_router.delete("/delete-all")
+# async def delete_all_hosts():
+#     """
+#     모든 호스트 정보를 삭제합니다.
+#     """
+#     await host_database.delete_all()
+#     return {"message": "All hosts deleted successfully."}
+
+
+# @client_router.delete("/delete-all")
+# async def delete_all_clients():
+#     """
+#     모든 클라이언트 정보를 삭제합니다.
+#     """
+#     await client_database.delete_all()
+#     return {"message": "All clients deleted successfully."}

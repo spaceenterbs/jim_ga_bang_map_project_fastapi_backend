@@ -3,15 +3,11 @@ from typing import Optional
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr
 
-# from beanie.models import init_model
-
 
 class Host(Document):
     email: EmailStr
     password: str
-    hostName: str
-    # creator_id: PydanticObjectId  # 사용자 ID를 연결하는 필드
-    # image: str
+    host_name: str
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "hosts"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
@@ -22,8 +18,7 @@ class Host(Document):
                 {
                     "email": "jimgabang@gmail.com",
                     "password": "jim",
-                    "hostName": "gabang",
-                    # "image": "https://linktomyimage.com/image.png",
+                    "host_name": "gabang",
                 }
             ]
         }
@@ -32,16 +27,14 @@ class Host(Document):
 
 class HostUpdate(BaseModel):
     password: Optional[str]
-    hostName: Optional[str]
-    # image: Optional[str]
+    host_name: Optional[str]
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
                     "password": "jim",
-                    "hostName": "gabang",
-                    # "image": "https://linktomyimage.com/image.png",
+                    "host_name": "gabang",
                 }
             ]
         }
@@ -51,8 +44,7 @@ class HostUpdate(BaseModel):
 class Client(Document):
     email: EmailStr
     password: str
-    clientName: str
-    # creator_id: PydanticObjectId  # 사용자 ID를 연결하는 필드
+    client_name: str
 
     class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
         name = "clients"  # User 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
@@ -63,28 +55,23 @@ class Client(Document):
                 {
                     "email": "jimgabang@gmail.com",
                     "password": "jim",
-                    "clientName": "gabang",
+                    "client_name": "gabang",
                 }
             ]
         }
     }
 
 
-# # Host 및 Client 모델을 초기화
-# init_model(Host, settings)
-# init_model(Client, settings)
-
-
 class ClientUpdate(BaseModel):
     password: Optional[str]
-    clientName: Optional[str]
+    client_name: Optional[str]
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
                     "password": "jim",
-                    "clientName": "gabang",
+                    "client_name": "gabang",
                 }
             ]
         }
@@ -101,6 +88,7 @@ class TokenResponse(BaseModel):
             "examples": [
                 {
                     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZh",
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZh",
                     "token_type": "bearer ",
                 }
             ]

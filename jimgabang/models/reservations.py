@@ -13,33 +13,31 @@ class ServiceBookingRelation(Document):
 
 # models 폴더의 모델 파일을 변경하여 몽고DB 문서를 사용할 수 있도록 한다.
 class Service(Document):
-    # id: int
-    # creator_id: PydanticObjectId
     creator: Optional[str]  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
-    serviceName: str
+    service_name: str
     category: str
     address: str
     latitude: float
     longitude: float
-    serviceTime: str
-    serviceDate: List[str]
-    availableBag: int
-    totalAvailableBag: int
-    bookings: List[PydanticObjectId]
+    service_time: str
+    service_date: List[str]
+    available_bag: int
+    totalAvailable_bag: int
+    bookings: Optional[List[PydanticObjectId]] = None
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "seviceName": "카페 짐가방",
+                    "sevice_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
                     "latitude": 37.123456,
                     "longitude": 37.123456,
-                    "serviceTime": "09:00 ~ 18:00",
-                    "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                    "availableBag": 5,
-                    "totalAvailableBag": 5,
+                    "service_time": "09:00 ~ 18:00",
+                    "service_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "available_bag": 5,
+                    "totalAvailable_bag": 5,
                 }
             ]
         }
@@ -50,20 +48,18 @@ class Service(Document):
 
 
 class Booking(Document):
-    # id: int
-    # creator_id: PydanticObjectId
     creator: Optional[str]  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
-    bookingDate: List[date]
-    bookingBag: int
+    booking_date: List[date]
+    booking_bag: int
     confirm: bool = False
-    services: List[PydanticObjectId]
+    services: PydanticObjectId
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                    "bookingBag": 5,
+                    "booking_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "booking_bag": 5,
                     "confirm": False,
                 },
             ]
@@ -75,29 +71,29 @@ class Booking(Document):
 
 
 class ServiceUpdate(BaseModel):
-    seviceName: Optional[str]
+    sevice_name: Optional[str]
     category: Optional[str]
     address: Optional[str]
     latitude: Optional[float]
     longitude: Optional[float]
-    serviceTime: Optional[str]
-    serviceDate: Optional[List[date]]
-    availableBag: Optional[int]
-    totalAvailableBag: Optional[int]
+    service_time: Optional[str]
+    service_date: Optional[List[date]]
+    available_bag: Optional[int]
+    totalAvailable_bag: Optional[int]
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "seviceName": "카페 짐가방",
+                    "sevice_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
                     "latitude": 37.123456,
                     "longitude": 37.123456,
-                    "serviceTime": "09:00 ~ 18:00",
-                    "serviceDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                    "availableBag": 5,
-                    "totalAvailableBag": 5,
+                    "service_time": "09:00 ~ 18:00",
+                    "service_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "available_bag": 5,
+                    "totalAvailable_bag": 5,
                 }
             ]
         }
@@ -105,15 +101,15 @@ class ServiceUpdate(BaseModel):
 
 
 class BookingUpdate(BaseModel):
-    bookingDate: Optional[List[date]]
-    bookingBag: Optional[int]
+    booking_date: Optional[List[date]]
+    booking_bag: Optional[int]
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "bookingDate": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
-                    "bookingBag": 5,
+                    "booking_date": "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05",
+                    "booking_bag": 5,
                 }
             ]
         }

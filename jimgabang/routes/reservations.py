@@ -1,7 +1,6 @@
 # 이벤트 생성, 변경, 삭제 등의 처리를 위한 라우팅
 from beanie import PydanticObjectId
 from models.users import Host, Client
-from pydantic import EmailStr
 from fastapi import APIRouter, Depends, HTTPException, status
 from database.connections import Database
 from models.reservations import (
@@ -38,21 +37,6 @@ async def retrieve_all_services() -> List[Service]:
     """
     services = await service_database.get_all()
     return services
-
-    # if user_type not in ["host", "client"]:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Invalid user_type specified in header",
-    #     )
-
-    # if user_type == "host":
-    #     # 호스트와 관련된 작업 수행
-    #     services = await service_database.get_all()
-    # else:
-    #     # 클라이언트와 관련된 작업 수행
-    #     services = await service_database.get_all()  # 클라이언트의 경우 모든 서비스를 가져오도록 예시로 설정
-
-    # return services
 
 
 # 호스트가 자신이 만든 서비스를 가져오는 API
@@ -281,6 +265,7 @@ async def create_booking(body: Booking, client: str = Depends(authenticate_clien
     \n
 
     """
+    body.creator = client  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
     # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service_id)로부터 서비스 정보를 가져옵니다.
     service = await service_database.get(body.service_id)
     if not service:

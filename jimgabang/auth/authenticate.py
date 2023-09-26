@@ -75,7 +75,7 @@ async def authenticate_host(
 
 async def authenticate_client(
     access_token: str = Depends(oauth2_scheme),
-    refresh_token: str = Depends(oauth2_scheme),  # refresh_token을 인수로 추가한다.
+    refresh_token: str = Depends(refresh_oauth2_scheme),  # refresh_token을 인수로 추가한다.
 ) -> str:
     """
     Depends 기능을 사용하여 인증을 처리한다.
