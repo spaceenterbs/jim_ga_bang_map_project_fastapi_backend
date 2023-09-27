@@ -17,7 +17,7 @@ class Service(Document):
     service_time: str
     service_date: List[str]
     available_bag: int
-    totalAvailable_bag: int
+    total_available_bag: int
     bookings: Optional[List[PydanticObjectId]] = None
 
     model_config = {
@@ -35,7 +35,7 @@ class Service(Document):
                         "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
                     ],
                     "available_bag": 5,
-                    "totalAvailable_bag": 5,
+                    "total_available_bag": 5,
                     "bookings": [],
                 }
             ]
@@ -48,7 +48,7 @@ class Service(Document):
 
 class Booking(Document):
     creator: EmailStr  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
-    booking_date: List[date]
+    booking_date: List[str]
     booking_bag: int
     confirm: bool = False
     service: PydanticObjectId
@@ -63,7 +63,7 @@ class Booking(Document):
                     ],
                     "booking_bag": 5,
                     "confirm": False,
-                    "services": "612c1c1c3e6a7f5f5a7f5f5a",
+                    "service": "612c1c1c3e6a7f5f5a7f5f5a",
                 },
             ]
         }
@@ -82,7 +82,7 @@ class ServiceUpdate(BaseModel):
     service_time: Optional[str]
     service_date: Optional[List[str]]
     available_bag: Optional[int]
-    totalAvailable_bag: Optional[int]
+    total_available_bag: Optional[int]
 
     model_config = {
         "json_schema_extra": {
@@ -98,7 +98,7 @@ class ServiceUpdate(BaseModel):
                         "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
                     ],
                     "available_bag": 5,
-                    "totalAvailable_bag": 5,
+                    "total_available_bag": 5,
                 }
             ]
         }
