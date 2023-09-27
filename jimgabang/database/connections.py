@@ -116,7 +116,7 @@ class Database:
         None 값은 제외되며, 변경 쿼리는 beanie의 update() 메서드를 통해 실행된다.
         """
         doc_id = id
-        des_body = body.dict()
+        des_body = body.model_dump()
         des_body = {
             k: v for k, v in des_body.items() if v is not None
         }  # 변경된 요청 바디는 딕셔너리에 저장된 다음 None값을 제외하도록 필터링된다.

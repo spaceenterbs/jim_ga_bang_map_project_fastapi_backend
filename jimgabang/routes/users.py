@@ -91,7 +91,7 @@ async def sign_host_in(
     )
 
 
-@host_router.post("host/refresh-token", response_model=TokenResponse)
+@host_router.post("refresh-token", response_model=TokenResponse)
 async def refresh_host_access_token(
     host: OAuth2PasswordRequestForm = Depends(),
 ) -> dict:
@@ -115,8 +115,12 @@ async def refresh_host_access_token(
         # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
         access_token = create_access_token(host_exist.email)
 
+        # 새로운 refresh 토큰도 발급한다.
+        new_refresh_token = create_refresh_token(host_exist.email)
+
         return {
             "access_token": access_token,
+            "refresh_token": new_refresh_token,
             "token_type": "Bearer",
         }
 
@@ -124,6 +128,11 @@ async def refresh_host_access_token(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid host email passed",
     )
+
+
+"""
+=================================================
+"""
 
 
 @client_router.post("/signup")
@@ -180,7 +189,7 @@ async def sign_client_in(
     )
 
 
-@client_router.post("client/refresh-token", response_model=TokenResponse)
+@client_router.post("/refresh-token", response_model=TokenResponse)
 async def refresh_client_access_token(
     client: OAuth2PasswordRequestForm = Depends(),
 ) -> dict:
@@ -204,8 +213,12 @@ async def refresh_client_access_token(
         # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
         access_token = create_access_token(client_exist.email)
 
+        # 새로운 refresh 토큰도 발급한다.
+        new_refresh_token = create_refresh_token(client_exist.email)
+
         return {
             "access_token": access_token,
+            "refresh_token": new_refresh_token,
             "token_type": "Bearer",
         }
 
@@ -213,52 +226,6 @@ async def refresh_client_access_token(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid client email passed",
     )
-
-
-@host_router.get("/get/{host_id}", response_model=Host)
-async def get_host(host_id: PydanticObjectId):  # id: str -> id: PydanticObjectId
-    """
-    생성 목적: 호스트 정보를 id로 가져옵니다.
-    """
-    host = await Host.find_one(Host.id == host_id)
-    if not host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host not found",
-        )
-    return host
-
-
-@client_router.get("/get/{client_id}", response_model=Client)
-async def get_client(client_id: PydanticObjectId):
-    """
-    생성 목적: 클라이언트 정보를 id로 가져옵니다.
-    """
-    client = await Client.find_one(Client.id == client_id)
-    if not client:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Client not found",
-        )
-    return client
-
-
-@host_router.get("/get-all", response_model=list[Host])
-async def get_all_hosts():
-    """
-    생성 목적: 모든 호스트 정보를 가져옵니다.
-    """
-    hosts = await host_database.find_all()
-    return hosts
-
-
-@client_router.get("/get-all", response_model=list[Client])
-async def get_all_clients():
-    """
-    생성 목적: 모든 클라이언트 정보를 가져옵니다.
-    """
-    clients = await client_database.find_all()
-    return clients
 
 
 """
@@ -337,6 +304,99 @@ async def update_client(
             detail="No Client update has been made",
         )
     return updated_client
+
+
+"""
+===================================================
+"""
+
+
+@host_router.get("/{host_id}", response_model=Host)
+async def get_host(
+    host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+) -> Host:
+    """
+    생성 목적: 호스트 정보를 id로 가져온다.
+    """
+    if current_user.id != host_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You can only get your own account",
+        )
+    host = await Host.find_one(Host.id == host_id)
+    if not host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host not found",
+        )
+    return host
+
+
+@client_router.get("/{client_id}", response_model=Client)
+async def get_client(
+    client_id: PydanticObjectId, current_user: Client = Depends(authenticate_client)
+) -> Client:
+    """
+    생성 목적: 클라이언트 정보를 id로 가져옵니다.
+    """
+    if current_user.id != client_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You can only get your own account",
+        )
+    client = await Client.find_one(Client.id == client_id)
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found",
+        )
+    return client
+
+
+# @host_router.get("/get/{host_id}", response_model=Host)
+# async def get_host(host_id: PydanticObjectId):  # id: str -> id: PydanticObjectId
+#     """
+#     생성 목적: 호스트 정보를 id로 가져옵니다.
+#     """
+#     host = await Host.find_one(Host.id == host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host not found",
+#         )
+#     return host
+
+
+# @client_router.get("/get/{client_id}", response_model=Client)
+# async def get_client(client_id: PydanticObjectId):
+#     """
+#     생성 목적: 클라이언트 정보를 id로 가져옵니다.
+#     """
+#     client = await Client.find_one(Client.id == client_id)
+#     if not client:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Client not found",
+#         )
+#     return client
+
+
+@host_router.get("/get-all", response_model=list[Host])
+async def get_all_hosts():
+    """
+    생성 목적: 모든 호스트 정보를 가져옵니다.
+    """
+    hosts = await host_database.find_all()
+    return hosts
+
+
+@client_router.get("/get-all", response_model=list[Client])
+async def get_all_clients():
+    """
+    생성 목적: 모든 클라이언트 정보를 가져옵니다.
+    """
+    clients = await client_database.find_all()
+    return clients
 
 
 """

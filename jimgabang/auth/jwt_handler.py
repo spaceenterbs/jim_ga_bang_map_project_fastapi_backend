@@ -26,22 +26,22 @@ def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 �
     key: 페이로드를 사인하기 위한 키.
     algorithm: payload를 사인 및 암호화하는 알고리즘으로, 기본값인 HS256 알고리즘이 가장 많이 사용된다.
     """
-    token = jwt.encode(
+    access_token = jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm="HS256",
     )
-    return token
+    return access_token
 
 
-async def verify_host_access_token(token: str) -> dict:
+async def verify_host_access_token(access_token: str) -> dict:
     """
     앱에 전달된 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
         data = jwt.decode(
-            token,
+            access_token,
             settings.SECRET_KEY,
             algorithms=["HS256"],
         )
@@ -75,14 +75,14 @@ async def verify_host_access_token(token: str) -> dict:
         ) from jwt_error
 
 
-async def verify_client_access_token(token: str) -> dict:
+async def verify_client_access_token(access_token: str) -> dict:
     """
     앱에 전달된 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
         data = jwt.decode(
-            token,
+            access_token,
             settings.SECRET_KEY,
             algorithms=["HS256"],
         )
@@ -131,21 +131,21 @@ def create_refresh_token(
         "user": user,
         "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
     }
-    token = jwt.encode(
+    refresh_token = jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm="HS256",
     )
-    return token
+    return refresh_token
 
 
-async def verify_host_refresh_token(token: str) -> dict:
+async def verify_host_refresh_token(refresh_token: str) -> dict:
     """
     앱에 전달된 refresh 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
-        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        data = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
         expire = data.get("expires")
 
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
@@ -174,13 +174,13 @@ async def verify_host_refresh_token(token: str) -> dict:
         ) from jwt_error
 
 
-async def verify_client_refresh_token(token: str) -> dict:
+async def verify_client_refresh_token(refresh_token: str) -> dict:
     """
     앱에 전달된 refresh 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
-        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        data = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
         expire = data.get("expires")
 
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
