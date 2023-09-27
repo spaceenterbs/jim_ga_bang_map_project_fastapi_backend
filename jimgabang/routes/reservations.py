@@ -226,7 +226,6 @@ async def delete_all_services():
 """
 
 
-# 모든 이벤트를 추출하거나 특정 ID의 이벤트만 추출하는 라우트를 정의한다.
 @booking_router.get("/", response_model=List[Booking])
 async def get_all_bookings() -> List[Booking]:
     """1번\n
@@ -236,7 +235,6 @@ async def get_all_bookings() -> List[Booking]:
     return bookings
 
 
-# 클라이언트가 자신의 예약을 가져오는 API
 @booking_router.get("/client/{client_id}", response_model=List[Booking])
 async def get_user_bookings(
     client_id: PydanticObjectId,
@@ -261,7 +259,6 @@ async def get_user_bookings(
     return bookings_by_client
 
 
-# 특정 ID의 이벤트만 추출하는 라우트에서는 해당 ID의 이벤트가 없으면 HTTP_404_NOT_FOUND 예외를 발생시킨다.
 @booking_router.get("/{booking_id}", response_model=Booking)
 async def get_booking(booking_id: PydanticObjectId) -> Booking:
     """3번\n
@@ -310,7 +307,7 @@ async def delete_booking_bag(
     client: Client = Depends(authenticate_client),
 ):
     """5번\n
-    생성 목적: 클라이언트가 자신의 예약을 취소한다.
+    생성 목적: 클라이언트가 자신의 예약을 삭제함(취소 역할).
     \n
 
     """
@@ -440,7 +437,7 @@ async def create_booking(
 async def update_booking_confirm(
     booking_id: PydanticObjectId,
     body: BookingConfirmUpdate,
-    host: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     """9번\n
     생성 목적: 호스트가 자신이 생성한 서비스에 예약이 들어온 것을 확정한다.
@@ -448,7 +445,7 @@ async def update_booking_confirm(
 
     """
     booking = await booking_database.get(booking_id)
-    if booking.creator != host.email:
+    if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking update not allowed",

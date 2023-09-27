@@ -57,7 +57,7 @@ async def verify_host_access_token(access_token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh token expired",
+                detail="Host access token expired",
             )
         user_exist = await Host.find_one(
             Host.email == data["user"],
@@ -98,7 +98,7 @@ async def verify_client_access_token(access_token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh token expired",
+                detail="Client access token expired",
             )
         user_exist = await Client.find_one(
             Client.email == data["user"],
@@ -158,7 +158,7 @@ async def verify_host_refresh_token(refresh_token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh token expired!",
+                detail="Host refresh token expired!",
             )
         user_exist = await Host.find_one(Host.email == data["user"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
@@ -193,7 +193,7 @@ async def verify_client_refresh_token(refresh_token: str) -> dict:
         ):  # 토큰의 만료 시간이 지났는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh token expired!",
+                detail="Client refresh token expired!",
             )
         user_exist = await Client.find_one(Client.email == data["user"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
