@@ -51,7 +51,7 @@ class Booking(Document):
     booking_date: List[date]
     booking_bag: int
     confirm: bool = False
-    services: PydanticObjectId
+    service: PydanticObjectId
 
     model_config = {
         "json_schema_extra": {

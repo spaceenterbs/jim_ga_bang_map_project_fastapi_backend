@@ -99,6 +99,44 @@ async def get_service_by_id(
     return service
 
 
+@service_router.get("/{service_id}/bookings", response_model=List[Booking])
+async def get_bookings_for_service(
+    service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+) -> List[Booking]:
+    """
+    생성 목적: 호스트가 자신의 서비스에 들어온 모든 예약을 추출한다.
+    """
+    service = await service_database.get(service_id)  # 하나의 서비스 id로부터 서비스 정보를 가져온다.
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with supplied ID does not exist",
+        )
+
+    if current_user.email != service.creator:  # 서비스를 생성한 Host만 예약을 추출할 수 있다.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to get bookings from this service",
+        )
+
+    bookings = []  # 예약을 저장할 리스트를 생성한다.
+
+    for booking_id in service.bookings:
+        booking = await booking_database.get(booking_id)
+
+        if not booking:
+            continue  # 예약이 존재하지 않으면 건너뛴다.
+
+        bookings.append(booking)
+
+    return bookings
+
+
+"""
+------------------------------------------------
+"""
+
+
 # 이벤트 생성 및 삭제 라우트를 정의한다.
 @service_router.post("/new")
 async def create_service(
@@ -224,6 +262,7 @@ async def get_user_bookings(
         )
 
     all_bookings = await Booking.all()
+
     bookings_by_client = [
         booking for booking in all_bookings if booking.creator == current_user.email
     ]  # booking(expression) for item in iterable if condition
@@ -268,6 +307,44 @@ async def get_booking_by_id(
             detail="Booking with supplied ID does not exist",
         )
     return booking
+
+
+@booking_router.get("{booking_id}/service", response_model=Service)
+async def get_service_for_booking(
+    booking_id: PydanticObjectId, current_user: Client = Depends(authenticate_client)
+) -> Service:
+    """
+    생성 목적: 클라이언트가 자신의 예약에 대한 서비스를 추출한다.
+    """
+
+    booking = await booking_database.get(booking_id)
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking with supplied ID does not exist",
+        )
+
+    if current_user.email != booking.creator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to get service from this booking",
+        )
+
+    service = await service_database.get(booking.service)
+
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service within booking with supplied ID does not exist",
+        )
+
+    return service
+
+
+"""
+------------------------------------------------
+"""
 
 
 # 예약 생성 API
