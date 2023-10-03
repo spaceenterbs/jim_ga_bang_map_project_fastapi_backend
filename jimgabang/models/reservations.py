@@ -1,7 +1,8 @@
 # 이벤트 처리용 모델을 정의
 from pydantic import BaseModel, EmailStr
 from beanie import Document
-from datetime import date
+
+# from datetime import date
 from typing import Optional, List
 from beanie import PydanticObjectId
 
@@ -24,7 +25,7 @@ class Service(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "creator": "jimgabang@gmail.com",
+                    "creator": "test@gmail.com",
                     "sevice_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
@@ -57,7 +58,7 @@ class Booking(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "creator": "jimgabang@gmail.com",
+                    "creator": "test@gmail.com",
                     "booking_date": [
                         "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
                     ],
@@ -130,7 +131,7 @@ class BookingConfirmUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "confirm": False,
+                    "confirm": True,
                 }
             ]
         }

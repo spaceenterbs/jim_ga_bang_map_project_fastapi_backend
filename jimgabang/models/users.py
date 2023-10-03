@@ -1,6 +1,6 @@
 # 사용자 처리용 모델을 정의
 from typing import Optional
-from beanie import Document, PydanticObjectId
+from beanie import Document
 from pydantic import BaseModel, EmailStr
 
 
@@ -16,9 +16,9 @@ class Host(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "email": "jimgabang@gmail.com",
-                    "password": "jim",
-                    "host_name": "gabang",
+                    "email": "test@gmail.com",
+                    "password": "1234",
+                    "host_name": "jim",
                 }
             ]
         }
@@ -33,8 +33,8 @@ class HostUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "password": "jim",
-                    "host_name": "gabang",
+                    "password": "1234",
+                    "host_name": "jim",
                 }
             ]
         }
@@ -53,8 +53,8 @@ class Client(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "email": "jimgabang@gmail.com",
-                    "password": "jim",
+                    "email": "test@gmail.com",
+                    "password": "1234",
                     "client_name": "gabang",
                 }
             ]
@@ -70,7 +70,7 @@ class ClientUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "password": "jim",
+                    "password": "1234",
                     "client_name": "gabang",
                 }
             ]
@@ -89,7 +89,7 @@ class TokenResponse(BaseModel):
                 {
                     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZh",
                     "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZh",
-                    "token_type": "bearer ",
+                    "token_type": "Bearer ",
                 }
             ]
         }

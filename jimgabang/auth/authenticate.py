@@ -6,28 +6,26 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    Header,
 )  # Depends = oauth2_scheme을 의존 라이브러리 함수에 주입한다.
-from typing import Optional, Union, Annotated
+
+from models.users import Host
 
 from fastapi.security import (
     OAuth2PasswordBearer,
 )  # OAuth2PasswordBearer = 보안 로직이 존재한다는 것을 앱에 알려준다.
 from auth.jwt_handler import (
     create_access_token,
-    create_refresh_token,
     verify_host_access_token,
     verify_client_access_token,
     verify_host_refresh_token,
     verify_client_refresh_token,
 )  # 앞서 정의한 토큰 생성 및 검증 함수로, 토큰의 유효성을 확인한다. # refresh token을 검증하는 함수 추가
-from models.users import Host, Client
 
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="user/signin",
+oauth2_scheme = OAuth2PasswordBearer(  # OAuth2PasswordBearer = 객체 OAuth2를 사용하는 보안 인증 방식에 대한 설정을 정의하는 객체.
+    tokenUrl="user/access",
 )  # OAuth2를 위한 access 토큰을 얻기 위한 엔드포인트 URL 정의
-# OAuth2PasswordBearer = 객체 OAuth2를 사용하는 보안 인증 방식에 대한 설정을 정의하는 객체.
+
 
 refresh_oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="user/refresh",
@@ -37,7 +35,7 @@ refresh_oauth2_scheme = OAuth2PasswordBearer(
 async def authenticate_host(
     access_token: str = Depends(oauth2_scheme),
     refresh_token: str = Depends(oauth2_scheme),  # refresh_token을 인수로 추가한다.
-) -> Union[Host, None]:
+) -> str:
     """
     Depends 기능을 사용하여 인증을 처리한다.
     함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
@@ -71,6 +69,9 @@ async def authenticate_host(
     # 사용자 정보를 조회하여 반환
     user = await Host.find_one(Host.email == user_name)
     return user
+
+
+"""""" """""" """""" """""" """""" """""" """"""
 
 
 async def authenticate_client(
@@ -111,7 +112,3 @@ async def authenticate_client(
     new_access_token = create_access_token(user)
 
     return new_access_token
-
-
-"""""" """""" """""" """""" """""" """""" """"""
-"""""" """""" """""" """""" """""" """""" """"""

@@ -100,7 +100,7 @@ class Database:
         """
         get_all() 메서드는 인자가 없고 컬렉션에 있는 모든 레코드를 리스트 형태로 반환한다.
         """
-        docs = await self.model.find_all().to_list()
+        docs = await self.find_all()
         return docs
 
     async def find(self, query):

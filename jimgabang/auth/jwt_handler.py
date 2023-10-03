@@ -26,22 +26,22 @@ def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 �
     key: 페이로드를 사인하기 위한 키.
     algorithm: payload를 사인 및 암호화하는 알고리즘으로, 기본값인 HS256 알고리즘이 가장 많이 사용된다.
     """
-    access_token = jwt.encode(
+    token = jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm="HS256",
     )
-    return access_token
+    return token
 
 
-async def verify_host_access_token(access_token: str) -> dict:
+async def verify_host_access_token(token: str) -> dict:
     """
     앱에 전달된 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
         data = jwt.decode(
-            access_token,
+            token,
             settings.SECRET_KEY,
             algorithms=["HS256"],
         )
@@ -50,7 +50,7 @@ async def verify_host_access_token(access_token: str) -> dict:
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No access token supplied",
+                detail="No host access token supplied",
             )
         if datetime.utcnow() > datetime.utcfromtimestamp(
             expire
@@ -65,24 +65,24 @@ async def verify_host_access_token(access_token: str) -> dict:
         if not user_exist:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid access token",
+                detail="Invalid host access token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as jwt_error:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JWTError access token",
+            detail="Invalid JWTError host access token",
         ) from jwt_error
 
 
-async def verify_client_access_token(access_token: str) -> dict:
+async def verify_client_access_token(token: str) -> dict:
     """
     앱에 전달된 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
         data = jwt.decode(
-            access_token,
+            token,
             settings.SECRET_KEY,
             algorithms=["HS256"],
         )
@@ -91,7 +91,7 @@ async def verify_client_access_token(access_token: str) -> dict:
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No access token supplied",
+                detail="No client access token supplied",
             )
         if datetime.utcnow() > datetime.utcfromtimestamp(
             expire
@@ -106,13 +106,13 @@ async def verify_client_access_token(access_token: str) -> dict:
         if not user_exist:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid access token",
+                detail="Invalid client access token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as jwt_error:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JWTError access token",
+            detail="Invalid JWTError client access token",
         ) from jwt_error
 
 
@@ -131,27 +131,27 @@ def create_refresh_token(
         "user": user,
         "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
     }
-    refresh_token = jwt.encode(
+    token = jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm="HS256",
     )
-    return refresh_token
+    return token
 
 
-async def verify_host_refresh_token(refresh_token: str) -> dict:
+async def verify_host_refresh_token(token: str) -> dict:
     """
     앱에 전달된 refresh 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
-        data = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
+        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         expire = data.get("expires")
 
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No refresh token supplied",
+                detail="No host refresh token supplied",
             )
         if datetime.utcnow() > datetime.utcfromtimestamp(
             expire
@@ -164,29 +164,29 @@ async def verify_host_refresh_token(refresh_token: str) -> dict:
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid refresh token",
+                detail="Invalid host refresh token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as jwt_error:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JWTError refresh token",
+            detail="Invalid JWTError host refresh token",
         ) from jwt_error
 
 
-async def verify_client_refresh_token(refresh_token: str) -> dict:
+async def verify_client_refresh_token(token: str) -> dict:
     """
     앱에 전달된 refresh 토큰을 검증하는 함수
     """
     try:
         # 함수가 토큰을 문자열로 받아 try 블록 내에서 여러 가지 확인 작업을 거친다.
-        data = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
+        data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         expire = data.get("expires")
 
         if expire is None:  # 토큰의 만료 시간이 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No refresh token supplied",
+                detail="No client refresh token supplied",
             )
         if datetime.utcnow() > datetime.utcfromtimestamp(
             expire
@@ -199,11 +199,11 @@ async def verify_client_refresh_token(refresh_token: str) -> dict:
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid refresh token",
+                detail="Invalid client refresh token",
             )
         return data  # 토큰이 유효하면 디코딩된 페이로드를 반환한다.
     except JWTError as jwt_error:  # JWT 요청 자체에 오류가 있는지 확인한다.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JWTError refresh token",
+            detail="Invalid JWTError client refresh token",
         ) from jwt_error

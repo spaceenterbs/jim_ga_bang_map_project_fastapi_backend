@@ -67,7 +67,7 @@ async def sign_host_in(
     해당 사용자가 존재하는지 확인한다.
     """
     host_exist = await Host.find_one(
-        Host.email == host.username
+        Host.email == host.username,
     )  # Host 객체의 email 필드가 host.username과 일치하는 문서를 찾는다.
     if not host_exist:
         raise HTTPException(
@@ -91,14 +91,16 @@ async def sign_host_in(
     )
 
 
-@host_router.post("refresh-token", response_model=TokenResponse)
+@host_router.post("/refresh-token", response_model=TokenResponse)
 async def refresh_host_access_token(
     host: OAuth2PasswordRequestForm = Depends(),
 ) -> dict:
     """
     refresh 토큰으로 access 토큰을 갱신한다.
     """
-    host_exist = await Host.find_one(Host.email == host.username)
+    host_exist = await Host.find_one(
+        Host.email == host.username,
+    )
 
     if not host_exist:
         raise HTTPException(
@@ -107,11 +109,11 @@ async def refresh_host_access_token(
         )
 
     # refresh 토큰을 검증한다.
-    decoded_refresh_token = verify_host_refresh_token(
+    decoded_refresh_token = verify_host_refresh_token(  # decoded_refresh_token은 코루틴을 반환하는 비동기 함수이다. async def로 정의된 함수는 호출될 때 즉시 코루틴 객체를 반환한다. await 키워드를 사용하면 코루틴 객체가 실행되고 결과를 반환한다.
         host.password
     )  # host.password는 host.refresh_token이 대입된 값이다.
 
-    if decoded_refresh_token["user"] == host.username:
+    if (await decoded_refresh_token)["user"] == host.username:
         # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
         access_token = create_access_token(host_exist.email)
 
@@ -130,8 +132,93 @@ async def refresh_host_access_token(
     )
 
 
+@host_router.put("/{host_id}", response_model=Host)
+async def update_host(
+    host_id: PydanticObjectId,
+    body: HostUpdate,
+    current_user: Host = Depends(authenticate_host),
+) -> Host:
+    """
+    현재 호스트 정보를 업데이트한다.
+    """
+    host = await Host.get(host_id)
+
+    """
+    업데이트되는 사용자 정보의 password 필드가 비어 있지 않다면, 새로운 비밀번호를 해싱하고 업데이트하기 전에 해싱된 비밀번호를 해당 필드에 할당합니다. 이렇게 하면 비밀번호가 변경될 때 새로운 해시값이 저장되며, 기존 비밀번호는 해싱되어 저장됩니다.
+    """
+    # 비밀번호를 수정한 경우에만 비밀번호 해싱을 적용한다.
+    if body.password:
+        hashed_password = hash_password.create_hash(body.password)
+        body.password = hashed_password
+
+    # current_user 객체에서 호스트 ID를 가져온다.
+    host_id = current_user.id
+    if host_id != host.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You can only update your own account",
+        )
+    # host_id를 사용하여 호스트 정보를 업데이트한다.
+    updated_host = await host_database.update(host_id, body)
+
+    if not updated_host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No Host update has been made",
+        )
+    return updated_host
+
+
+@host_router.get("/{host_id}", response_model=Host)
+async def get_host(
+    host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+) -> Host:
+    """
+    생성 목적: 호스트 정보를 id로 가져온다.
+    """
+    if current_user.id != host_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You can only get your own account",
+        )
+    host = await Host.find_one(Host.id == host_id)
+    if not host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host not found",
+        )
+    return host
+
+
+# @host_router.get("/get/{host_id}", response_model=Host)
+# async def get_host(host_id: PydanticObjectId):  # id: str -> id: PydanticObjectId
+#     """
+#     생성 목적: 호스트 정보를 id로 가져옵니다.
+#     """
+#     host = await Host.find_one(Host.id == host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host not found",
+#         )
+#     return host
+
+
+@host_router.get("/get-all", response_model=list[Host])
+async def get_all_hosts():
+    print(1)
+
+    """
+    생성 목적: 모든 호스트 정보를 가져옵니다.
+    """
+    hosts = await Host.find_many()
+    print(1)
+
+    return hosts
+
+
 """
-=================================================
+=======================================================================================
 """
 
 
@@ -228,50 +315,6 @@ async def refresh_client_access_token(
     )
 
 
-"""
-=======================================================================================
-"""
-
-
-@host_router.put("/{host_id}", response_model=Host)
-async def update_host(
-    host_id: PydanticObjectId,
-    body: HostUpdate,
-    current_user: Host = Depends(authenticate_host),
-) -> Host:
-    """
-    현재 호스트 정보를 업데이트한다.
-    """
-    host = await Host.get(host_id)
-
-    # 비밀번호를 수정한 경우에만 비밀번호 해싱을 적용한다.
-    if body.password:
-        hashed_password = hash_password.create_hash(body.password)
-        body.password = hashed_password
-
-    # current_user 객체에서 호스트 ID를 가져온다.
-    host_id = current_user.id
-    if host_id != host.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: You can only update your own account",
-        )
-    # host_id를 사용하여 호스트 정보를 업데이트한다.
-    updated_host = await host_database.update(host_id, body)
-
-    if not updated_host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No Host update has been made",
-        )
-    return updated_host
-
-
-"""
-업데이트되는 사용자 정보의 password 필드가 비어 있지 않다면, 새로운 비밀번호를 해싱하고 업데이트하기 전에 해싱된 비밀번호를 해당 필드에 할당합니다. 이렇게 하면 비밀번호가 변경될 때 새로운 해시값이 저장되며, 기존 비밀번호는 해싱되어 저장됩니다.
-"""
-
-
 @client_router.put("/{client_id}", response_model=Client)
 async def update_client(
     client_id: PydanticObjectId,
@@ -306,32 +349,6 @@ async def update_client(
     return updated_client
 
 
-"""
-===================================================
-"""
-
-
-@host_router.get("/{host_id}", response_model=Host)
-async def get_host(
-    host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-) -> Host:
-    """
-    생성 목적: 호스트 정보를 id로 가져온다.
-    """
-    if current_user.id != host_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: You can only get your own account",
-        )
-    host = await Host.find_one(Host.id == host_id)
-    if not host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host not found",
-        )
-    return host
-
-
 @client_router.get("/{client_id}", response_model=Client)
 async def get_client(
     client_id: PydanticObjectId, current_user: Client = Depends(authenticate_client)
@@ -353,20 +370,6 @@ async def get_client(
     return client
 
 
-# @host_router.get("/get/{host_id}", response_model=Host)
-# async def get_host(host_id: PydanticObjectId):  # id: str -> id: PydanticObjectId
-#     """
-#     생성 목적: 호스트 정보를 id로 가져옵니다.
-#     """
-#     host = await Host.find_one(Host.id == host_id)
-#     if not host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Host not found",
-#         )
-#     return host
-
-
 # @client_router.get("/get/{client_id}", response_model=Client)
 # async def get_client(client_id: PydanticObjectId):
 #     """
@@ -381,21 +384,12 @@ async def get_client(
 #     return client
 
 
-@host_router.get("/get-all", response_model=list[Host])
-async def get_all_hosts():
-    """
-    생성 목적: 모든 호스트 정보를 가져옵니다.
-    """
-    hosts = await host_database.find_all()
-    return hosts
-
-
 @client_router.get("/get-all", response_model=list[Client])
 async def get_all_clients():
     """
     생성 목적: 모든 클라이언트 정보를 가져옵니다.
     """
-    clients = await client_database.find_all()
+    clients = await Client.find_many()
     return clients
 
 
