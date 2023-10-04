@@ -57,7 +57,7 @@ app.include_router(
 )
 
 
-# # 앱 실행 시 몽고DB를 초기화하도록 만든다.
+# 앱 실행 시 몽고DB를 초기화하도록 만든다.
 @app.on_event("startup")
 async def init_db():
     await settings.initialize_database()

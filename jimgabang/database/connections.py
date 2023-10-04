@@ -71,22 +71,22 @@ class Database:
         await document.create()
         return
 
-    async def find_one(self, query):
-        """
-        find_one() 메서드는 쿼리를 인자로 받아서 일치하는 첫 번째 문서를 반환한다.
-        일치하는 문서가 없으면 None을 반환한다.
-        """
-        return await self.model.get_or_none(**query)
+    # async def find(self, query):
+    #     """
+    #     find() 메서드는 쿼리를 인자로 받아서 일치하는 모든 레코드를 반환한다.
+    #     """
+    #     return await self.model.filter(**query).all().to_list()
 
-    async def find_all(self):
-        """
-        find_all() 메서드는 컬렉션에 있는 모든 문서를 리스트 형태로 반환한다.
-        """
-        return await self.model.all().to_list()
+    # async def find_one(self, query):
+    #     """
+    #     find_one() 메서드는 쿼리를 인자로 받아서 일치하는 첫 번째 문서를 반환한다.
+    #     일치하는 문서가 없으면 None을 반환한다.
+    #     """
+    #     return await self.model.get_or_none(**query)
 
     async def get(
         self, id: PydanticObjectId  # ID를 인자로 받아 컬렉션에서 일치하는 레코드를 불러온다.
-    ) -> bool:
+    ) -> Any:
         """
         get() 메서드는 ID를 인자로 받아서 컬렉션에서 일치하는 레코드를 반환한다.
         찾지 못하면 False를 반환한다.
@@ -100,14 +100,14 @@ class Database:
         """
         get_all() 메서드는 인자가 없고 컬렉션에 있는 모든 레코드를 리스트 형태로 반환한다.
         """
-        docs = await self.find_all()
+        docs = await self.model.find_all().to_list()
         return docs
 
-    async def find(self, query):
-        """
-        find() 메서드는 쿼리를 인자로 받아서 일치하는 모든 레코드를 반환한다.
-        """
-        return await self.model.filter(**query).all().to_list()
+    # async def find_all(self):
+    #     """
+    #     find_all() 메서드는 컬렉션에 있는 모든 문서를 리스트 형태로 반환한다.
+    #     """
+    #     return await self.model.all().to_list()
 
     async def update(self, id: PydanticObjectId, body: BaseModel) -> Any:
         """
@@ -148,5 +148,8 @@ class Database:
         """
         delete_all() 메서드는 컬렉션에 있는 모든 레코드를 삭제한다.
         """
-        await self.model.delete_all()
+        all_documents = await self.model.all().to_list()
+        for doc in all_documents:
+            await doc.delete()
+
         return True

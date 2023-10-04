@@ -211,7 +211,7 @@ async def get_all_hosts():
     """
     생성 목적: 모든 호스트 정보를 가져옵니다.
     """
-    hosts = await Host.find_many()
+    hosts = await host_database.get_all()
     print(1)
 
     return hosts
@@ -389,7 +389,7 @@ async def get_all_clients():
     """
     생성 목적: 모든 클라이언트 정보를 가져옵니다.
     """
-    clients = await Client.find_many()
+    clients = await client_database.get_all()
     return clients
 
 
