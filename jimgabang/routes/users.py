@@ -10,6 +10,7 @@ from auth.jwt_handler import (
     verify_client_refresh_token,
 )
 from database.connections import Database
+from jose import JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러리
 
 from auth.hash_password import HashPassword
 from auth.authenticate import authenticate_client, authenticate_host
@@ -97,6 +98,10 @@ async def refresh_host_access_token(
 ) -> dict:
     """
     refresh 토큰으로 access 토큰을 갱신한다.
+    1. 호스트는 서버에 로그인 요청을 보내고, 서버는 응답으로 access, refresh 토큰을 반환한다.
+    2. 호스트는 이 후의 요청에 대해 받은 access_token을 Authorization header에 담아서 보낸다.
+    3. 만약 서버가 401 Unauthorized 응답(access_token 만료)을 반환하면, 호스트는 refresh_token을 사용하여 새로운 access_token을 요청한다.
+    4. 서버는 refresh token을 검증하고, 유효한 경우 새로운 access_token과 refresh_token을 반환한다.
     """
     host_exist = await Host.find_one(
         Host.email == host.username,
@@ -108,23 +113,32 @@ async def refresh_host_access_token(
             detail="Host with email does not exist.",
         )
 
-    # refresh 토큰을 검증한다.
-    decoded_refresh_token = verify_host_refresh_token(  # decoded_refresh_token은 코루틴을 반환하는 비동기 함수이다. async def로 정의된 함수는 호출될 때 즉시 코루틴 객체를 반환한다. await 키워드를 사용하면 코루틴 객체가 실행되고 결과를 반환한다.
-        host.password
-    )  # host.password는 host.refresh_token이 대입된 값이다.
+    try:
+        # refresh 토큰을 검증한다.
+        decoded_refresh_token = verify_host_refresh_token(  # decoded_refresh_token은 코루틴을 반환하는 비동기 함수이다. async def로 정의된 함수는 호출될 때 즉시 코루틴 객체를 반환한다. await 키워드를 사용하면 코루틴 객체가 실행되고 결과를 반환한다.
+            host.password
+        )  # host.password는 host.refresh_token이 대입된 값이다.
 
-    if (await decoded_refresh_token)["user"] == host.username:
-        # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
-        access_token = create_access_token(host_exist.email)
+        if (await decoded_refresh_token)["user"] == host.username:
+            # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
+            access_token = create_access_token(host_exist.email)
 
-        # 새로운 refresh 토큰도 발급한다.
-        new_refresh_token = create_refresh_token(host_exist.email)
+            # 새로운 refresh 토큰도 발급한다.
+            new_refresh_token = create_refresh_token(host_exist.email)
 
-        return {
-            "access_token": access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "Bearer",
-        }
+            return {
+                "access_token": access_token,
+                "refresh_token": new_refresh_token,
+                "token_type": "Bearer",
+            }
+
+    except (
+        JWTError
+    ) as jwt_error:  # verify_host_refresh_token() 함수를 호출하는 곳에서 발생한 예외를 처리한다.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid JWTError host token",
+        ) from jwt_error
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -206,15 +220,36 @@ async def get_host(
 
 @host_router.get("/get-all", response_model=list[Host])
 async def get_all_hosts():
-    print(1)
-
     """
     생성 목적: 모든 호스트 정보를 가져옵니다.
     """
     hosts = await host_database.get_all()
-    print(1)
-
     return hosts
+
+
+@host_router.delete("/{host_id}")
+async def delete_host(
+    host_id: PydanticObjectId,
+    current_user: Host = Depends(authenticate_host),
+):
+    """
+    생성 목적: 현재 호스트 정보를 삭제합니다.
+    """
+    if host_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You can only delete your own account",
+        )
+    host = await Host.get(host_id)
+    if not host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host account not found",
+        )
+    await host_database.delete(current_user.id)
+    return {
+        "message": "Host deleted successfully.",
+    }
 
 
 """
@@ -253,7 +288,9 @@ async def sign_client_in(
     """
     해당 사용자가 존재하는지 확인한다.
     """
-    client_exist = await Client.find_one(Client.email == client.username)
+    client_exist = await Client.find_one(
+        Client.email == client.username,
+    )
     if not client_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -283,7 +320,9 @@ async def refresh_client_access_token(
     """
     refresh 토큰으로 access 토큰을 갱신한다.
     """
-    client_exist = await Client.find_one(Client.email == client.username)
+    client_exist = await Client.find_one(
+        Client.email == client.username,
+    )
 
     if not client_exist:
         raise HTTPException(
@@ -291,23 +330,29 @@ async def refresh_client_access_token(
             detail="Client with email does not exist.",
         )
 
-    # refresh 토큰을 검증한다.
-    decoded_refresh_token = verify_client_refresh_token(
-        client.password
-    )  # client.password는 client.refresh_token이 대입된 값이다.
+    try:
+        # refresh 토큰을 검증한다.
+        decoded_refresh_token = verify_client_refresh_token(
+            client.password
+        )  # client.password는 client.refresh_token이 대입된 값이다.
 
-    if decoded_refresh_token["user"] == client.username:
-        # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
-        access_token = create_access_token(client_exist.email)
+        if (await decoded_refresh_token)["user"] == client.username:
+            # refresh 토큰이 유효하다면 새로운 access 토큰을 발급한다.
+            access_token = create_access_token(client_exist.email)
 
-        # 새로운 refresh 토큰도 발급한다.
-        new_refresh_token = create_refresh_token(client_exist.email)
+            # 새로운 refresh 토큰도 발급한다.
+            new_refresh_token = create_refresh_token(client_exist.email)
 
-        return {
-            "access_token": access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "Bearer",
-        }
+            return {
+                "access_token": access_token,
+                "refresh_token": new_refresh_token,
+                "token_type": "Bearer",
+            }
+    except JWTError as jwt_error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid JWTError client token",
+        ) from jwt_error
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -339,7 +384,7 @@ async def update_client(
             detail="Forbidden: You can only update your own account",
         )
     # client_id를 사용하여 클라이언트 정보를 업데이트한다.
-    updated_client = await client_database.update(current_user.id, body)
+    updated_client = await client_database.update(client_id, body)
 
     if not updated_client:
         raise HTTPException(
@@ -393,52 +438,20 @@ async def get_all_clients():
     return clients
 
 
-"""
-===================================================================================================
-"""
-
-
-@host_router.delete("/{host_id}")
-async def delete_host(
-    host_id: PydanticObjectId,
-    current_host: Host = Depends(authenticate_host),
+@client_router.delete("/{client_id}")
+async def delete_client(
+    client_id: PydanticObjectId,  # 삭제할 Client 계정의 ID를 받는다.
+    current_user: Client = Depends(authenticate_client),
 ):
     """
     생성 목적: 현재 호스트 정보를 삭제합니다.
     """
-    if host_id != current_host.id:
+    if client_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Forbidden: You can only delete your own account",
         )
-    host = await Host.get(host_id)
-    if not host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host account not found",
-        )
-    await host_database.delete(current_host.id)
-    return {
-        "message": "Host deleted successfully.",
-    }
 
-
-@client_router.delete("/{client_id}")
-async def delete_client(
-    client_id: PydanticObjectId,  # 삭제할 Client 계정의 ID를 받는다.
-    current_client: Client = Depends(authenticate_client),
-):
-    """
-    생성 목적: 현재 호스트 정보를 삭제합니다.
-    """
-    # 1. 클라이언트가 요청한 Client ID와 현재 인증된 클라이언트 ID를 비교한다.
-    if client_id != current_client.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Forbidden: You can only delete your own account",
-        )
-
-    # 2. Client 계정을 삭제하기 전에 존재하는지 확인한다.
     client = await Client.get(client_id)
     if not client:
         raise HTTPException(
@@ -446,9 +459,7 @@ async def delete_client(
             detail="Client account not found",
         )
 
-    # 3. Client 계정을 삭제한다.
-    await client.delete()
-
+    await client_database.delete(current_user.id)
     return {
         "message": "Client deleted successfully.",
     }

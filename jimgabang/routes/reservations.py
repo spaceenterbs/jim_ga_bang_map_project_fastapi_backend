@@ -31,9 +31,7 @@ async def get_all_services() -> List[Service]:
     \n
     지도 상에서 모든 서비스를 보여주기 위해 사용된다.
     """
-    services = (
-        await service_database.get_all()
-    )  # Service.find_all().to_list()  # 모든 서비스를 추출한다.
+    services = await service_database.get_all()
     return services
 
 
@@ -408,8 +406,8 @@ async def create_booking(
 
     """
     body.creator = client.email  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
-    # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service_id)로부터 서비스 정보를 가져옵니다.
-    service = await service_database.get(body.service_id)
+    # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service 필드)로부터 서비스 정보를 가져온다.
+    service = await service_database.get(body.service)
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

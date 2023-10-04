@@ -52,7 +52,7 @@ class Booking(Document):
     booking_date: List[str]
     booking_bag: int
     confirm: bool = False
-    service: PydanticObjectId
+    service: PydanticObjectId  # 서비스와 연결된다.
 
     model_config = {
         "json_schema_extra": {

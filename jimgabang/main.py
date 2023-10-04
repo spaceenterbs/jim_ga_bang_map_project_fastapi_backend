@@ -4,6 +4,7 @@ main.py는 FastAPI 프로젝트의 전체적인 환경을 설정하는 파일이
 """
 
 # 라우트를 등록하고 앱을 실행한다. 라이브러리와 사용자 라우트 정의를 임포트한다.
+# import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,7 +16,10 @@ from routes.reservations import service_router, booking_router
 
 import uvicorn
 
-app = FastAPI()
+
+# logging.basicConfig(level=logging.DEBUG)
+
+app = FastAPI(debug=False)
 
 settings = Settings()
 
