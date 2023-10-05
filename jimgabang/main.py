@@ -19,7 +19,7 @@ import uvicorn
 
 # logging.basicConfig(level=logging.DEBUG)
 
-app = FastAPI(debug=False)
+app = FastAPI(debug=True)
 
 settings = Settings()
 
@@ -76,7 +76,7 @@ def home():
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",
+        host="0.0.0.0",  # 모든 네트워크 인터페이스에서 수신 대기하므로, 같은 네트워크에 있는 다른 컴퓨터나 토커 컨테이너 등에서도 접근할 수 있다. 따라서 Docker 컨테이너 내부에서 앱을 실행하고 외부(호스트 시스템이나 다른 컨테이너)에서 접근하려면, host를 localhost 또는 127.0.0.1 대신에 0.0.0.0으로 설정해야 한다. # "127.0.0.1"
         port=8000,
         reload=True,
     )
