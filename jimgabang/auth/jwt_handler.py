@@ -64,7 +64,7 @@ async def verify_host_access_token(token: str) -> dict:
                 detail="Host access token expired",
             )
         user_exist = await Host.find_one(
-            Host.email == data["user_id"],
+            Host.id == data["user_id"],
         )  # 토큰에 저장된 사용자가 존재하는지 확인한다.
         if not user_exist:
             raise HTTPException(
@@ -105,7 +105,7 @@ async def verify_client_access_token(token: str) -> dict:
                 detail="Client access token expired",
             )
         user_exist = await Client.find_one(
-            Client.email == data["user_id"],
+            Client.id == data["user_id"],
         )  # 토큰에 저장된 사용자가 존재하는지 확인한다.
         if not user_exist:
             raise HTTPException(
@@ -164,7 +164,7 @@ async def verify_host_refresh_token(token: str) -> dict:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Host refresh token expired!",
             )
-        user_exist = await Host.find_one(Host.email == data["user_id"])
+        user_exist = await Host.find_one(Host.id == data["user_id"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -199,7 +199,7 @@ async def verify_client_refresh_token(token: str) -> dict:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Client refresh token expired!",
             )
-        user_exist = await Client.find_one(Client.email == data["user_id"])
+        user_exist = await Client.find_one(Client.id == data["user_id"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
