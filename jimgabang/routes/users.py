@@ -65,7 +65,7 @@ async def sign_host_in(
     # OAuth2PasswordRequestForm 클래스를 sign_host_in() 라우트 함수에 주입하여 해당 함수가 OAuth2 사양을 엄격하게 따르도록 한다.
     # 함수 내에서는 패스워드, 반환된 접속 토큰, 토큰 유형을 검증한다.
     """
-    해당 사용자가 존재하는지 확인한다.
+    해당 사용자가 존재하는지 확인하고 로그인하면 access, refresh 토큰을 반환한다.
     """
     host_exist = await Host.find_one(
         Host.email == host.username,
@@ -79,8 +79,8 @@ async def sign_host_in(
     if hash_password.verify_hash(
         host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(host_exist.id)
-        refresh_token = create_refresh_token(host_exist.id)
+        access_token = create_access_token(host_exist.email)
+        refresh_token = create_refresh_token(host_exist.email)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -347,8 +347,8 @@ async def sign_client_in(
     if hash_password.verify_hash(
         client.password, client_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(client_exist.id)
-        refresh_token = create_refresh_token(client_exist.id)
+        access_token = create_access_token(client_exist.email)
+        refresh_token = create_refresh_token(client_exist.email)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
