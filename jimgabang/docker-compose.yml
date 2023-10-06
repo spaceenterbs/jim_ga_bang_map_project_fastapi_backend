@@ -3,7 +3,7 @@ version: "3"
 services:
   api:
     build: .
-    image: jimgabang-api:latest
+    image: spaceenterbs/jimgabang-api:latest
     ports: 
       - "8000:8000"
     env_file:

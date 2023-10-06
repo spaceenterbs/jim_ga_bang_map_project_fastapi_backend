@@ -35,21 +35,15 @@ async def get_all_services() -> List[Service]:
     return services
 
 
-@service_router.get("/host/{host_id}", response_model=List[Service])
+@service_router.get("/host", response_model=List[Service])
 async def get_all_services_by_host(
-    host_id: PydanticObjectId,
     current_user: Host = Depends(authenticate_host),
 ) -> List[Service]:
-    """2번\n
+    """
     생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
-    \n
+
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
     """
-    if current_user.id != host_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to get services",
-        )
 
     all_services = await Service.all()
     services_by_host = [
@@ -57,6 +51,30 @@ async def get_all_services_by_host(
     ]  # service(expression) for item in iterable if condition
 
     return services_by_host
+
+
+# @service_router.get("/host/{host_id}", response_model=List[Service])
+# async def get_all_services_by_host(
+#     host_id: PydanticObjectId,
+#     current_user: Host = Depends(authenticate_host),
+# ) -> List[Service]:
+#     """2번\n
+#     생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
+#     \n
+#     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
+#     """
+#     if current_user.id != host_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Not authorized to get services",
+#         )
+
+#     all_services = await Service.all()
+#     services_by_host = [
+#         service for service in all_services if service.creator == current_user.email
+#     ]  # service(expression) for item in iterable if condition
+
+#     return services_by_host
 
 
 @service_router.get("/{service_id}", response_model=Service)
@@ -233,28 +251,46 @@ async def get_all_bookings() -> List[Booking]:
     return bookings
 
 
-@booking_router.get("/client/{client_id}", response_model=List[Booking])
-async def get_user_bookings(
-    client_id: PydanticObjectId,
-    current_user: Client = Depends(authenticate_client),
-):
-    """2번\n
-    생성 목적: 클라이언트 자신의 예약을 추출한다.
-    \n
+@booking_router.get("/host", response_model=List[Booking])
+async def get_all_bookings_by_host(
+    current_user: Host = Depends(authenticate_host),
+) -> List[Booking]:
     """
-    if current_user.id != client_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to get bookings",
-        )
+    생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
+
+    호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
+    """
 
     all_bookings = await Booking.all()
-
-    bookings_by_client = [
+    bookings_by_host = [
         booking for booking in all_bookings if booking.creator == current_user.email
     ]  # booking(expression) for item in iterable if condition
 
-    return bookings_by_client
+    return bookings_by_host
+
+
+# @booking_router.get("/client/{client_id}", response_model=List[Booking])
+# async def get_user_bookings(
+#     client_id: PydanticObjectId,
+#     current_user: Client = Depends(authenticate_client),
+# ):
+#     """2번\n
+#     생성 목적: 클라이언트 자신의 예약을 추출한다.
+#     \n
+#     """
+#     if current_user.id != client_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Not authorized to get bookings",
+#         )
+
+#     all_bookings = await Booking.all()
+
+#     bookings_by_client = [
+#         booking for booking in all_bookings if booking.creator == current_user.email
+#     ]  # booking(expression) for item in iterable if condition
+
+#     return bookings_by_client
 
 
 @booking_router.get("/{booking_id}", response_model=Booking)
