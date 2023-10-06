@@ -79,8 +79,8 @@ async def sign_host_in(
     if hash_password.verify_hash(
         host.password, host_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(host_exist.email)
-        refresh_token = create_refresh_token(host_exist.email)
+        access_token = create_access_token(host_exist.id)
+        refresh_token = create_refresh_token(host_exist.id)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -300,8 +300,8 @@ async def sign_client_in(
     if hash_password.verify_hash(
         client.password, client_exist.password
     ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
-        access_token = create_access_token(client_exist.email)
-        refresh_token = create_refresh_token(client_exist.email)
+        access_token = create_access_token(client_exist.id)
+        refresh_token = create_refresh_token(client_exist.id)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,

@@ -6,17 +6,21 @@ from jose import jwt, JWTError  # JWT를 인코딩, 디코딩하는 jose 라이�
 from database.connections import Settings
 from models.users import Host, Client
 
+from beanie import PydanticObjectId
+
 # SECRET_KEY 변수를 추출할 수 있도록 Settings 클래스의 인스턴스를 만들고 토큰 생성용 함수를 정의한다.
 settings = Settings()
 
 
-def create_access_token(user: str) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
+def create_access_token(
+    user_id: PydanticObjectId,
+) -> str:  # 토큰 생성함수는 문자열 하나를 받아서 payload 딕셔너리에 전달한다.
     """
     access_token을 생성하는 함수
     """
     # payload 딕셔너리는 사용자명과 만료 시간을 포함하여 JWT가 디코딩될 때 반환된다.
     payload = {
-        "user": user,
+        "user_id": user_id,
         "expires": time.time() + 3600 * 24,  # 토큰의 만료 시간을 1일으로 설정한다.
     }
 
@@ -60,7 +64,7 @@ async def verify_host_access_token(token: str) -> dict:
                 detail="Host access token expired",
             )
         user_exist = await Host.find_one(
-            Host.email == data["user"],
+            Host.email == data["user_id"],
         )  # 토큰에 저장된 사용자가 존재하는지 확인한다.
         if not user_exist:
             raise HTTPException(
@@ -101,7 +105,7 @@ async def verify_client_access_token(token: str) -> dict:
                 detail="Client access token expired",
             )
         user_exist = await Client.find_one(
-            Client.email == data["user"],
+            Client.email == data["user_id"],
         )  # 토큰에 저장된 사용자가 존재하는지 확인한다.
         if not user_exist:
             raise HTTPException(
@@ -122,13 +126,13 @@ async def verify_client_access_token(token: str) -> dict:
 
 
 def create_refresh_token(
-    user: str,
+    user_id: PydanticObjectId,
 ) -> str:
     """
     사용자 이름을 받아서 새로운 Refresh 토큰을 생성한다. 이 토큰은 더 오랜 기간 동안 유효하다.
     """
     payload = {
-        "user": user,
+        "user_id": user_id,
         "expires": time.time() + 3600 * 24 * 7,  # 토큰의 만료 시간을 7일로 설정한다.
     }
     token = jwt.encode(
@@ -160,7 +164,7 @@ async def verify_host_refresh_token(token: str) -> dict:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Host refresh token expired!",
             )
-        user_exist = await Host.find_one(Host.email == data["user"])
+        user_exist = await Host.find_one(Host.email == data["user_id"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -195,7 +199,7 @@ async def verify_client_refresh_token(token: str) -> dict:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Client refresh token expired!",
             )
-        user_exist = await Client.find_one(Client.email == data["user"])
+        user_exist = await Client.find_one(Client.email == data["user_id"])
         if not user_exist:  # 토큰에 저장된 사용자가 존재하는지 확인한다.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
