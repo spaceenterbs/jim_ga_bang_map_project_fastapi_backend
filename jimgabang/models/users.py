@@ -33,7 +33,7 @@ class HostUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "password": "1234",
+                    "password": "12345",
                     "host_name": "test1",
                 }
             ]
@@ -70,7 +70,7 @@ class ClientUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "password": "1234",
+                    "password": "12345",
                     "client_name": "tester1",
                 }
             ]
