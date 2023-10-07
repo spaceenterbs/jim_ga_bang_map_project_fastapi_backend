@@ -119,15 +119,16 @@ async def update_service(
 
 @service_router.delete("/{service_id}")
 async def delete_service(
-    service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-):  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    service_id: PydanticObjectId,
+    current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+):
     """5번\n
     생성 목적: 호스트가 자신의 서비스를 삭제한다.
     \n
     호스트 admin 페이지에서 호스트가 자신의 서비스를 삭제하기 위해 사용된다.
     """
     service = await service_database.get(service_id)
-    if service.creator != current_user:
+    if service.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Service deletion not allowed",
@@ -221,6 +222,13 @@ async def create_service(
     )  # Host 객체의 특정 필드를 creator 필드에 할당한다.# 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
 
     result = await service_database.save(body)  # 새로운 서비스를 "먼저" 데이터베이스에 result로 저장한다.
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while saving the service",
+        )
+
     return {
         "message": "Service created successfully",
         "service": result.dict(),  # 생성된 서비스를 반환한다.
@@ -351,7 +359,7 @@ async def delete_booking_bag(
     """
     # 예약 정보를 가져온다.
     booking = await booking_database.get(booking_id)
-    if booking.creator != current_user:
+    if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking deletion not allowed",
@@ -469,7 +477,7 @@ async def create_booking(
     service.available_bag -= body.booking_bag
     await service_database.save(service)
 
-    return result
+    return result  # .dict()
 
 
 @booking_router.put("/{booking_id}/confirm", response_model=Booking)

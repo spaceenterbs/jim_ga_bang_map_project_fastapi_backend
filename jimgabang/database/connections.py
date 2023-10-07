@@ -63,13 +63,13 @@ class Database:
     def __init__(self, model):
         self.model = model
 
-    async def save(self, document) -> None:
+    async def save(self, document):
         """
         save() 메서드는 Beanie 문서를 인자로 받아서 db에 저장한다.
         create() 메서드는 Beanie에서 제공하는 메서드로, 문서 객체를 db에 저장하는 역할을 한다.
         """
         await document.create()
-        return
+        return document
 
     # async def find(self, query):
     #     """

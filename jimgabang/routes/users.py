@@ -52,9 +52,14 @@ async def sign_new_host_up(current_user: Host) -> dict:
     """
     hashed_password = hash_password.create_hash(current_user.password)
     current_user.password = hashed_password
-    await host_database.save(current_user)  # 데이터베이스에 host를 저장한다.
+
+    result = await host_database.save(current_user)  # 데이터베이스에 host를 저장한다.
+
     return {
         "message": "Host created successfully.",
+        "host": result.dict(
+            exclude={"password"}
+        ),  # dict() 메서드를 사용하여 Host 모델의 모든 필드를 딕셔너리로 변환한다. exclude 매개변수를 사용하여 password 필드를 제외한다.
     }
 
 

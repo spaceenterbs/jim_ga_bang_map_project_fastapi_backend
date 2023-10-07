@@ -26,7 +26,7 @@ class Service(Document):
             "examples": [
                 {
                     "creator": "test@gmail.com",
-                    "sevice_name": "카페 짐가방",
+                    "service_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
                     "latitude": 37.123456,
@@ -48,7 +48,7 @@ class Service(Document):
 
 
 class ServiceUpdate(BaseModel):
-    sevice_name: Optional[str]
+    service_name: Optional[str]
     category: Optional[str]
     address: Optional[str]
     latitude: Optional[float]
@@ -62,7 +62,7 @@ class ServiceUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "sevice_name": "카페 짐가방",
+                    "service_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
                     "latitude": 37.123456,
