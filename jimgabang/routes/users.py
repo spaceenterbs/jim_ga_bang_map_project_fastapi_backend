@@ -249,15 +249,6 @@ async def get_host(current_user: Host = Depends(authenticate_host)) -> Host:
 #     return host
 
 
-@host_router.get("/get-all", response_model=list[Host])
-async def get_all_hosts():
-    """
-    생성 목적: 모든 호스트 정보를 가져옵니다.
-    """
-    hosts = await host_database.get_all()
-    return hosts
-
-
 @host_router.delete("/")
 async def delete_host(current_user: Host = Depends(authenticate_host)):
     """
@@ -272,6 +263,15 @@ async def delete_host(current_user: Host = Depends(authenticate_host)):
     return {
         "message": "Host deleted successfully.",
     }
+
+
+@host_router.get("/get-all", response_model=list[Host])
+async def get_all_hosts():
+    """
+    생성 목적: 모든 호스트 정보를 가져옵니다.
+    """
+    hosts = await host_database.get_all()
+    return hosts
 
 
 # @host_router.delete("/{host_id}")

@@ -22,24 +22,21 @@ from auth.jwt_handler import (
 )  # 앞서 정의한 토큰 생성 및 검증 함수로, 토큰의 유효성을 확인한다. # refresh token을 검증하는 함수 추가
 
 
-oauth2_scheme = OAuth2PasswordBearer(  # OAuth2PasswordBearer = 객체 OAuth2를 사용하는 보안 인증 방식에 대한 설정을 정의하는 객체.
-    tokenUrl="user/access",
+oauth2_scheme_host = OAuth2PasswordBearer(  # OAuth2PasswordBearer = 객체 OAuth2를 사용하는 보안 인증 방식에 대한 설정을 정의하는 객체.
+    tokenUrl="host/access",
+)  # OAuth2를 위한 access 토큰을 얻기 위한 엔드포인트 URL 정의
+
+oauth2_scheme_client = OAuth2PasswordBearer(  # OAuth2PasswordBearer = 객체 OAuth2를 사용하는 보안 인증 방식에 대한 설정을 정의하는 객체.
+    tokenUrl="client/access",
 )  # OAuth2를 위한 access 토큰을 얻기 위한 엔드포인트 URL 정의
 
 
-refresh_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="user/refresh",
-)  # OAuth2를 위한 refresh 토큰을 얻기 위한 엔드포인트 URL 정의
-
-
 async def authenticate_host(
-    access_token: str = Depends(oauth2_scheme),
-    # refresh_token: str = Depends(oauth2_scheme),  # refresh_token을 인수로 추가한다.
+    access_token: str = Depends(oauth2_scheme_host),
 ) -> str:
     """
     Depends 기능을 사용하여 인증을 처리한다.
-    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
-    함수는 refresh_token이라는 매개변수를 받고. 이 매개변수는 refresh_oauth2_scheme을 통해 주입된다.
+    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme_host을 통해 주입된다.
     """
     if not access_token:
         raise HTTPException(
@@ -75,13 +72,11 @@ async def authenticate_host(
 
 
 async def authenticate_client(
-    access_token: str = Depends(oauth2_scheme),
-    # refresh_token: str = Depends(refresh_oauth2_scheme),  # refresh_token을 인수로 추가한다.
+    access_token: str = Depends(oauth2_scheme_client),
 ) -> str:
     """
     Depends 기능을 사용하여 인증을 처리한다.
-    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme을 통해 주입된다.
-    함수는 refresh_token이라는 매개변수를 받고. 이 매개변수는 refresh_oauth2_scheme을 통해 주입된다.
+    함수는 access_token이라는 매개변수를 받고. 이 매개변수는 oauth2_scheme_client을 통해 주입된다.
     """
     if not access_token:
         raise HTTPException(

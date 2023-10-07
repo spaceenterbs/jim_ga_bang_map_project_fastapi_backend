@@ -55,7 +55,7 @@ class Client(Document):
                 {
                     "email": "test@gmail.com",
                     "password": "1234",
-                    "client_name": "tester",
+                    "client_name": "test",
                 }
             ]
         }
@@ -71,7 +71,7 @@ class ClientUpdate(BaseModel):
             "examples": [
                 {
                     "password": "12345",
-                    "client_name": "tester1",
+                    "client_name": "test1",
                 }
             ]
         }
