@@ -18,7 +18,7 @@ class Host(Document):
                 {
                     "email": "test@gmail.com",
                     "password": "1234",
-                    "host_name": "jim",
+                    "host_name": "test",
                 }
             ]
         }
@@ -34,7 +34,7 @@ class HostUpdate(BaseModel):
             "examples": [
                 {
                     "password": "1234",
-                    "host_name": "jim",
+                    "host_name": "test1",
                 }
             ]
         }
@@ -55,7 +55,7 @@ class Client(Document):
                 {
                     "email": "test@gmail.com",
                     "password": "1234",
-                    "client_name": "gabang",
+                    "client_name": "tester",
                 }
             ]
         }
@@ -71,7 +71,7 @@ class ClientUpdate(BaseModel):
             "examples": [
                 {
                     "password": "1234",
-                    "client_name": "gabang",
+                    "client_name": "tester1",
                 }
             ]
         }
