@@ -9,7 +9,7 @@ from beanie import PydanticObjectId
 
 # models 폴더의 모델 파일을 변경하여 몽고DB 문서를 사용할 수 있도록 한다.
 class Service(Document):
-    creator: EmailStr  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
+    creator: Optional[EmailStr] = None  # 해당 서비스를 소유한 사용자만 처리할 수 있도록 한다.
     service_name: str
     category: str
     address: str
@@ -47,33 +47,6 @@ class Service(Document):
         name = "services"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
 
-class Booking(Document):
-    creator: EmailStr  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
-    booking_date: List[str]
-    booking_bag: int
-    confirm: bool = False
-    service: PydanticObjectId  # 서비스와 연결된다.
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "creator": "test@gmail.com",
-                    "booking_date": [
-                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
-                    ],
-                    "booking_bag": 5,
-                    "confirm": False,
-                    "service": "612c1c1c3e6a7f5f5a7f5f5a",
-                },
-            ]
-        }
-    }
-
-    class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
-        name = "bookings"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
-
-
 class ServiceUpdate(BaseModel):
     sevice_name: Optional[str]
     category: Optional[str]
@@ -104,6 +77,33 @@ class ServiceUpdate(BaseModel):
             ]
         }
     }
+
+
+class Booking(Document):
+    creator: Optional[EmailStr] = None  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
+    booking_date: List[str]
+    booking_bag: int
+    confirm: bool = False
+    service: PydanticObjectId  # 서비스와 연결된다.
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "creator": "test@gmail.com",
+                    "booking_date": [
+                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                    ],
+                    "booking_bag": 5,
+                    "confirm": False,
+                    "service": "612c1c1c3e6a7f5f5a7f5f5a",
+                },
+            ]
+        }
+    }
+
+    class Settings:  # Beanie ORM을 사용하여 MongoDB에 저장할 때 사용할 설정을 정의
+        name = "bookings"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
 
 class BookingUpdate(BaseModel):

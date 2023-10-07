@@ -95,7 +95,7 @@ async def get_service(service_id: PydanticObjectId) -> Service:
 async def update_service(
     service_id: PydanticObjectId,
     body: ServiceUpdate,
-    host: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Service:
     """4번\n
     생성 목적: 호스트가 자신의 서비스를 업데이트한다.
@@ -103,7 +103,7 @@ async def update_service(
     호스트가 admin 페이지에서 자신의 서비스에 들어온 예약의 확정을 하기 위해 사용된다.
     """
     service = await service_database.get(service_id)
-    if service.creator != host.email:
+    if service.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
@@ -119,7 +119,7 @@ async def update_service(
 
 @service_router.delete("/{service_id}")
 async def delete_service(
-    service_id: PydanticObjectId, host: Host = Depends(authenticate_host)
+    service_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
 ):  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     """5번\n
     생성 목적: 호스트가 자신의 서비스를 삭제한다.
@@ -127,7 +127,7 @@ async def delete_service(
     호스트 admin 페이지에서 호스트가 자신의 서비스를 삭제하기 위해 사용된다.
     """
     service = await service_database.get(service_id)
-    if service.creator != host:
+    if service.creator != current_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Service deletion not allowed",
@@ -209,7 +209,7 @@ async def get_bookings_for_service(
 @service_router.post("/new")
 async def create_service(
     body: Service,
-    host: Host = Depends(authenticate_host),
+    current_user: Host = Depends(authenticate_host),
 ) -> dict:  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
     """8번\n
     생성 목적: 호스트가 새로운 자신의 서비스를 생성한다.
@@ -217,11 +217,13 @@ async def create_service(
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신의 서비스를 생성하기 위해 사용된다.
     """
     body.creator = (
-        host.email
+        current_user.email
     )  # Host 객체의 특정 필드를 creator 필드에 할당한다.# 새로운 이벤트가 생성될 때 creator 필드가 함께 저장되도록 한다.
-    await service_database.save(body)
+
+    result = await service_database.save(body)  # 새로운 서비스를 "먼저" 데이터베이스에 result로 저장한다.
     return {
         "message": "Service created successfully",
+        "service": result.dict(),  # 생성된 서비스를 반환한다.
     }
 
 
@@ -313,7 +315,9 @@ async def get_booking(booking_id: PydanticObjectId) -> Booking:
 async def update_booking(
     booking_id: PydanticObjectId,
     body: BookingUpdate,
-    client: Client = Depends(authenticate_client),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    current_user: Client = Depends(
+        authenticate_client
+    ),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ) -> Booking:
     """4번\n
     생성 목적: 클라이언트가 자신의 예약을 업데이트한다.
@@ -321,7 +325,7 @@ async def update_booking(
 
     """
     booking = await booking_database.get(booking_id)
-    if booking.creator != client.email:
+    if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
@@ -338,7 +342,7 @@ async def update_booking(
 @booking_router.delete("/{booking_id}")
 async def delete_booking_bag(
     booking_id: PydanticObjectId,
-    client: Client = Depends(authenticate_client),
+    current_user: Client = Depends(authenticate_client),
 ):
     """5번\n
     생성 목적: 클라이언트가 자신의 예약을 삭제함(취소 역할).
@@ -347,7 +351,7 @@ async def delete_booking_bag(
     """
     # 예약 정보를 가져온다.
     booking = await booking_database.get(booking_id)
-    if booking.creator != client:
+    if booking.creator != current_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking deletion not allowed",
@@ -434,37 +438,38 @@ async def get_service_for_booking(
 @booking_router.post("/new", response_model=Booking)
 async def create_booking(
     body: Booking,
-    client: Client = Depends(authenticate_client),
+    current_user: Client = Depends(authenticate_client),
 ):
     """8번\n
     생성 목적: 클라이언트가 자신의 예약을 생성한다.
     \n
 
     """
-    body.creator = client.email  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
+    body.creator = current_user.email  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
     # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service 필드)로부터 서비스 정보를 가져온다.
     service = await service_database.get(body.service)
+
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Service with supplied ID does not exist",
         )
 
-    # 예약 가능한 가방 수를 초과하는 예약을 거부합니다.
+    # 예약 가능한 가방 수를 초과하는 예약을 거부한다.
     if body.booking_bag > service.available_bag:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Exceeds the available bags for this service",
         )
 
-    # 예약을 데이터베이스에 저장합니다.
-    await booking_database.save(body)
+    # 예약을 데이터베이스에 저장한다.
+    result = await booking_database.save(body)
 
-    # 서비스의 가용한 가방 수를 감소시킵니다.
+    # 서비스의 가용한 가방 수를 감소시킨다.
     service.available_bag -= body.booking_bag
     await service_database.save(service)
 
-    return body
+    return result
 
 
 @booking_router.put("/{booking_id}/confirm", response_model=Booking)

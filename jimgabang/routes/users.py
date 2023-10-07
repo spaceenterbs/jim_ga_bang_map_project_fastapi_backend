@@ -32,14 +32,14 @@ hash_password = HashPassword()
 
 
 @host_router.post("/signup")
-async def sign_new_host_up(host: Host) -> dict:
+async def sign_new_host_up(current_user: Host) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
     등록 라우트에서는 애플리케이션에 내장된 데이터베이스를 사용한다.
     이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
     """
     host_exist = await Host.find_one(
-        Host.email == host.email
+        Host.email == current_user.email
     )  # Host 객체의 email 필드가 host.email과 일치하는 문서를 찾는다.
     if host_exist:  # 이미 존재하는 이메일이라면 409 상태 코드를 반환한다.
         raise HTTPException(
@@ -50,9 +50,9 @@ async def sign_new_host_up(host: Host) -> dict:
     """
     사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
     """
-    hashed_password = hash_password.create_hash(host.password)
-    host.password = hashed_password
-    await host_database.save(host)  # 데이터베이스에 host를 저장한다.
+    hashed_password = hash_password.create_hash(current_user.password)
+    current_user.password = hashed_password
+    await host_database.save(current_user)  # 데이터베이스에 host를 저장한다.
     return {
         "message": "Host created successfully.",
     }
@@ -305,11 +305,11 @@ async def get_all_hosts():
 
 
 @client_router.post("/signup")
-async def sign_new_client_up(client: Client) -> dict:
+async def sign_new_client_up(current_user: Client) -> dict:
     """
     해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
     """
-    client_exist = await Client.find_one(Client.email == client.email)
+    client_exist = await Client.find_one(Client.email == current_user.email)
     if client_exist:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -318,9 +318,9 @@ async def sign_new_client_up(client: Client) -> dict:
     """
     사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
     """
-    hashed_password = hash_password.create_hash(client.password)
-    client.password = hashed_password
-    await client_database.save(client)
+    hashed_password = hash_password.create_hash(current_user.password)
+    current_user.password = hashed_password
+    await client_database.save(current_user)
     return {
         "message": "Client created successfully.",
     }
