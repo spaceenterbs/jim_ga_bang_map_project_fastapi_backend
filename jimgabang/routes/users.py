@@ -570,19 +570,19 @@ async def delete_client(current_user: Client = Depends(authenticate_client)):
 """
 
 
-@host_router.delete("/delete-all")
-async def delete_all_hosts():
-    """
-    모든 호스트 정보를 삭제합니다.
-    """
-    await host_database.delete_all()
-    return {"message": "All hosts deleted successfully."}
+# @host_router.delete("/delete-all")
+# async def delete_all_hosts():
+#     """
+#     모든 호스트 정보를 삭제합니다.
+#     """
+#     await host_database.delete_all()
+#     return {"message": "All hosts deleted successfully."}
 
 
-@client_router.delete("/delete-all")
-async def delete_all_clients():
-    """
-    모든 클라이언트 정보를 삭제합니다.
-    """
-    await client_database.delete_all()
-    return {"message": "All clients deleted successfully."}
+# @client_router.delete("/delete-all")
+# async def delete_all_clients():
+#     """
+#     모든 클라이언트 정보를 삭제합니다.
+#     """
+#     await client_database.delete_all()
+#     return {"message": "All clients deleted successfully."}

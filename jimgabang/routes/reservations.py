@@ -137,15 +137,17 @@ async def delete_service(
     호스트 admin 페이지에서 호스트가 자신의 서비스를 삭제하기 위해 사용된다.
     """
     service = await service_database.get(service_id)
+
+    if not service:  # 서비스가 존재하는지 먼저 확인한다.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with supplied ID does not exist",
+        )
+
     if service.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Service deletion not allowed",
-        )
-    if not service:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service with supplied ID does not exist",
         )
     # 서비스를 삭제한다.
     await service_database.delete(service_id)
@@ -244,16 +246,16 @@ async def create_service(
     }
 
 
-@service_router.delete("/delete-all")
-async def delete_all_services():
-    """9번\n
-    생성 목적: 테스트를 위해 모든 서비스를 삭제한다.
-    \n
-    """
-    await service_database.delete_all()
-    return {
-        "message": "All Services deleted successfully",
-    }
+# @service_router.delete("/delete-all")
+# async def delete_all_services():
+#     """9번\n
+#     생성 목적: 테스트를 위해 모든 서비스를 삭제한다.
+#     \n
+#     """
+#     await service_database.delete_all()
+#     return {
+#         "message": "All Services deleted successfully",
+#     }
 
 
 """
@@ -377,27 +379,33 @@ async def delete_booking_bag(
     """
     # 예약 정보를 가져온다.
     booking = await booking_database.get(booking_id)
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking with supplied ID does not exist",
+        )
+
     if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking deletion not allowed",
         )
-    if not booking:
-        raise HTTPException(
-            status_code=404,
-            detail="Booking with supplied ID does not exist",
-        )
+
+    # 서비스의 가용한 가방 수를 다시 증가시킨다.
+    service = await service_database.get(booking.service)
+
+    service.available_bag += booking.booking_bag
+
+    # save(생성) 대신 update(수정)를 사용하여 서비스의 가용한 가방 수를 증가시킨다.
+    await service_database.update(service.id, service)
 
     # 예약을 취소한다.
     await booking_database.delete(booking_id)
 
-    # 서비스의 가용한 가방 수를 다시 증가시킨다.
-    service = await service_database.get(booking.service_id)
-    service.available_bag += booking.booking_bag
-    await service_database.save(service)
-
     return {
         "message": "Booking deleted successfully",
+        "service_available_bag": service.available_bag,
     }
 
 
@@ -462,7 +470,7 @@ async def get_service_for_booking(
     return service
 
 
-@booking_router.post("/new", response_model=Booking)
+@booking_router.post("/new")  # , response_model=Booking)
 async def create_booking(
     body: Booking,
     current_user: Client = Depends(
@@ -476,7 +484,7 @@ async def create_booking(
     """
     body.creator = current_user.email  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
     # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service 필드)로부터 서비스 정보를 가져온다.
-    service = await service_database.get(body.service)
+    service = await service_database.get(body.service)  # 해당 서비스의 ID로부터 서비스 정보를 가져온다.
 
     if not service:
         raise HTTPException(
@@ -496,16 +504,20 @@ async def create_booking(
 
     # 서비스의 가용한 가방 수를 감소시킨다.
     service.available_bag -= body.booking_bag
-    result_service = await service_database.update(
-        service.id,
-        service,
-    )
+
+    # save(생성) 대신 update(수정)를 사용하여 서비스의 가용한 가방 수를 감소시킨다.
+    result_service = await service_database.update(service.id, service)
+    print(
+        type(result_service)
+    )  # result_service의 실제 타입이 딕셔너리인지, Pydantic 모델인지 확인한다. <class 'models.reservations.Service'> 이므로 Pydantic 모델이다.
 
     return {
-        **result.dict(),
         "message": "Booking created successfully",
-        # "booking": result.dict(),
-        "service_available_bag": result_service.available_bag,  # .dict(include={"available_bag"}),
+        # **result.dict(),  # Booking 객체의 각 필드를 직접적으로 결과 딕셔너리의 키로 설정한다.
+        "booking": result.dict(),  # dict()는 객체가 Pydantic 모델이거나, Pydantic 모델을 상속받는 클래스의 인스턴스일 때, 해당 객체를 딕셔너리로 변환한다.
+        "service_available_bag": result_service.dict(
+            include={"available_bag"}
+        ),  # result_service["available_bag"], result_service.dict()["available_bag"] 둘 다 가능하다.
     }
 
 
@@ -521,12 +533,15 @@ async def update_booking_confirm(
 
     """
     booking = await booking_database.get(booking_id)
+
     if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking update not allowed",
         )
+
     updated_booking = await booking_database.update(booking_id, body)
+
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -535,13 +550,13 @@ async def update_booking_confirm(
     return updated_booking
 
 
-@booking_router.delete("/delete-all")
-async def delete_all_bookings():
-    """10번\n
-    생성 목적: 테스트를 위해 모든 예약를 삭제한다.
-    \n
-    """
-    await booking_database.delete_all()
-    return {
-        "message": "All bookings deleted successfully",
-    }
+# @booking_router.delete("/delete-all")
+# async def delete_all_bookings():
+#     """10번\n
+#     생성 목적: 테스트를 위해 모든 예약를 삭제한다.
+#     \n
+#     """
+#     await booking_database.delete_all()
+#     return {
+#         "message": "All bookings deleted successfully",
+#     }
