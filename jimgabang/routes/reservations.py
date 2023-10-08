@@ -340,9 +340,9 @@ async def update_booking(
 ) -> Booking:
     """4번\n
     생성 목적: 클라이언트가 자신의 예약을 업데이트한다.
-    \n
-
     """
+
+    # 예약 정보를 가져온다.
     booking = await booking_database.get(booking_id)
 
     if booking is None:  # 예약이 존재하지 않으면 예외를 발생시킨다.
@@ -357,14 +357,45 @@ async def update_booking(
             detail="Operation not allowed",
         )
 
+    # 연관된 서비스 정보를 가져옵니다.
+    service = await service_database.get(booking.service)
+
+    # 해당 서비스가 없다면 에러를 발생시킵니다.
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with supplied ID does not exist.",
+        )
+
+    # 가방 수의 차이를 계산합니다.
+    bag_difference = body.booking_bag - booking.booking_bag
+
+    # 예약 업데이트로 인해 이용 가능한 가방 수 초과 시 에러 메세지 반환
+    if bag_difference > 0 and bag_difference > service.available_bag:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The update exceeds available bags in the service.",
+        )
+
+    # 가방 수 차이에 따라 서비스에서 이용 가능한 가방 수 업데이트
+    service.available_bag -= bag_difference
+
+    # 수정된 서비스 레코드 저장
+    await service_database.update(service.id, service)
+
     updated_booking = await booking_database.update(booking_id, body)
 
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No Booking update has been made",
+            detail="The booking was not updated.",
         )
-    return updated_booking
+
+    return {
+        "message": "Booking has been successfully updated",
+        "updated_booking": updated_booking.dict(),
+        "service_available_bag": {"available_bag": service.available_bag},
+    }
 
 
 @booking_router.delete("/{booking_id}")
@@ -470,6 +501,11 @@ async def get_service_for_booking(
     return service
 
 
+"""
+=========================================================================================
+"""
+
+
 @booking_router.post("/new")  # , response_model=Booking)
 async def create_booking(
     body: Booking,
@@ -521,33 +557,81 @@ async def create_booking(
     }
 
 
-@booking_router.put("/{booking_id}/confirm", response_model=Booking)
-async def update_booking_confirm(
+@booking_router.put("/{booking_id}/status", response_model=Booking)
+async def update_booking_status(
     booking_id: PydanticObjectId,
     body: BookingConfirmUpdate,
-    current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+    current_user: Host = Depends(authenticate_host),
 ) -> Booking:
-    """9번\n
-    생성 목적: 호스트가 자신이 생성한 서비스에 예약이 들어온 것을 확정한다.
-    \n
-
-    """
     booking = await booking_database.get(booking_id)
 
     if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Booking update not allowed",
+            detail="Operation not allowed",
         )
+
+    # 연관된 서비스 정보를 가져온다.
+    service = await service_database.get(booking.service)
+
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with supplied ID does not exist",
+        )
+
+    # 예약 상태가 현재 대기 중이고 취소로 수정되는 경우, 이용 가능한 가방 수를 늘린다.
+    if booking.confirm == "pending" and body.confirm == "cancelled":
+        service.available_bag += booking.booking_bag
+
+    # 수정된 서비스 레코드를 저장한다.
+    await service_database.update(service.id, service)
+
+    # 요청 본문에서 받은 값으로 예약 상태를 설정한다.
+    booking.confirm = body.confirm
 
     updated_booking = await booking_database.update(booking_id, body)
 
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No Booking update has been made",
+            detail="The booking status was not updated.",
         )
-    return updated_booking
+
+    return {
+        "message": f"Booking status updated to {body.confirm}",
+        "updated_booking": updated_booking.dict(),
+        "service_available_bag": {"available_bag": service.available_bag},
+    }
+
+
+# @booking_router.put("/{booking_id}/confirm", response_model=Booking)
+# async def update_booking_confirm(
+#     booking_id: PydanticObjectId,
+#     body: BookingConfirmUpdate,
+#     current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
+# ) -> Booking:
+#     """9번\n
+#     생성 목적: 호스트가 자신이 생성한 서비스에 예약이 들어온 것을 확정한다.
+#     \n
+
+#     """
+#     booking = await booking_database.get(booking_id)
+
+#     if booking.creator != current_user.email:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Booking update not allowed",
+#         )
+
+#     updated_booking = await booking_database.update(booking_id, body)
+
+#     if not updated_booking:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="No Booking update has been made",
+#         )
+#     return updated_booking
 
 
 # @booking_router.delete("/delete-all")
