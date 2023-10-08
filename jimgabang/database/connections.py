@@ -89,12 +89,12 @@ class Database:
     ) -> Any:
         """
         get() 메서드는 ID를 인자로 받아서 컬렉션에서 일치하는 레코드를 반환한다.
-        찾지 못하면 False를 반환한다.
+        찾지 못하면 None를 반환한다.
         """
         doc = await self.model.get(id)
         if doc:
             return doc
-        return False
+        return None
 
     async def get_all(self) -> List[Any]:
         """

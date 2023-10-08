@@ -151,6 +151,44 @@ async def refresh_host_access_token(
     )
 
 
+@host_router.get("/", response_model=Host)
+async def get_host(current_user: Host = Depends(authenticate_host)) -> Host:
+    """
+    생성 목적: 호스트 정보를 가져온다.
+    """
+
+    host_id = current_user.id
+    host = await Host.find_one(Host.id == host_id)
+
+    if not host:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Host not found",
+        )
+    return host
+
+
+# @host_router.get("/{host_id}", response_model=Host)
+# async def get_host(
+#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+# ) -> Host:
+#     """
+#     생성 목적: 호스트 정보를 id로 가져온다.
+#     """
+#     if current_user.id != host_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only get your own account",
+#         )
+#     host = await Host.find_one(Host.id == host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host not found",
+#         )
+#     return host
+
+
 @host_router.put("/", response_model=Host)
 async def update_host(
     body: HostUpdate,
@@ -214,44 +252,6 @@ async def update_host(
 #             detail="No Host update has been made",
 #         )
 #     return updated_host
-
-
-@host_router.get("/", response_model=Host)
-async def get_host(current_user: Host = Depends(authenticate_host)) -> Host:
-    """
-    생성 목적: 호스트 정보 가져온다.
-    """
-
-    host_id = current_user.id
-    host = await Host.find_one(Host.id == host_id)
-
-    if not host:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host not found",
-        )
-    return host
-
-
-# @host_router.get("/{host_id}", response_model=Host)
-# async def get_host(
-#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-# ) -> Host:
-#     """
-#     생성 목적: 호스트 정보를 id로 가져온다.
-#     """
-#     if current_user.id != host_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only get your own account",
-#         )
-#     host = await Host.find_one(Host.id == host_id)
-#     if not host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Host not found",
-#         )
-#     return host
 
 
 @host_router.delete("/")

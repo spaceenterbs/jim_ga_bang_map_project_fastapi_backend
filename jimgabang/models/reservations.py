@@ -83,7 +83,7 @@ class Booking(Document):
     creator: Optional[EmailStr] = None  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     booking_date: List[str]
     booking_bag: int
-    confirm: bool = False
+    confirm: Optional[bool] = False
     service: PydanticObjectId  # 서비스와 연결된다.
 
     model_config = {

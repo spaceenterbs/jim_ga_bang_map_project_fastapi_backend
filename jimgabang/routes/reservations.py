@@ -45,7 +45,7 @@ async def get_all_services_by_host(
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
     """
 
-    all_services = await Service.all()
+    all_services = await Service.all().to_list()
     services_by_host = [
         service for service in all_services if service.creator == current_user.email
     ]  # service(expression) for item in iterable if condition
@@ -103,12 +103,21 @@ async def update_service(
     호스트가 admin 페이지에서 자신의 서비스에 들어온 예약의 확정을 하기 위해 사용된다.
     """
     service = await service_database.get(service_id)
+
+    if service is None:  # 서비스가 존재하지 않으면 예외를 발생시킨다.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service with the given service_id not found",
+        )
+
     if service.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
         )
+
     updated_service = await service_database.update(service_id, body)
+
     if not updated_service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -261,22 +270,22 @@ async def get_all_bookings() -> List[Booking]:
     return bookings
 
 
-@booking_router.get("/host", response_model=List[Booking])
-async def get_all_bookings_by_host(
-    current_user: Host = Depends(authenticate_host),
+@booking_router.get("/client", response_model=List[Booking])
+async def get_all_bookings_by_client(
+    current_user: Client = Depends(authenticate_client),
 ) -> List[Booking]:
     """
-    생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
+    생성 목적: 클라이언트 자신이 예약한 모든 예약을 가져온다.
 
-    호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
+    클라이언트 admin 페이지에서 클라이언트 인증된 사용자에게 자신이 예약한 모든 예약을 보여주기 위해 사용된다.
     """
 
-    all_bookings = await Booking.all()
-    bookings_by_host = [
+    all_bookings = await Booking.all().to_list()
+    bookings_by_client = [
         booking for booking in all_bookings if booking.creator == current_user.email
     ]  # booking(expression) for item in iterable if condition
 
-    return bookings_by_host
+    return bookings_by_client
 
 
 # @booking_router.get("/client/{client_id}", response_model=List[Booking])
@@ -333,12 +342,21 @@ async def update_booking(
 
     """
     booking = await booking_database.get(booking_id)
+
+    if booking is None:  # 예약이 존재하지 않으면 예외를 발생시킨다.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking with the given booking_id not found",
+        )
+
     if booking.creator != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation not allowed",
         )
+
     updated_booking = await booking_database.update(booking_id, body)
+
     if not updated_booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -412,7 +430,8 @@ async def get_booking_by_id(
 
 @booking_router.get("/{booking_id}/service", response_model=Service)
 async def get_service_for_booking(
-    booking_id: PydanticObjectId, current_user: Client = Depends(authenticate_client)
+    booking_id: PydanticObjectId,
+    current_user: Client = Depends(authenticate_client),
 ) -> Service:
     """7번\n
     생성 목적: 클라이언트가 자신의 예약에 대한 서비스를 추출한다.
@@ -446,7 +465,9 @@ async def get_service_for_booking(
 @booking_router.post("/new", response_model=Booking)
 async def create_booking(
     body: Booking,
-    current_user: Client = Depends(authenticate_client),
+    current_user: Client = Depends(
+        authenticate_client
+    ),  # authenticate_client 를 통해 인증된 클라이언트 정보가 current_user 변수에 저장된다.
 ):
     """8번\n
     생성 목적: 클라이언트가 자신의 예약을 생성한다.
@@ -475,9 +496,17 @@ async def create_booking(
 
     # 서비스의 가용한 가방 수를 감소시킨다.
     service.available_bag -= body.booking_bag
-    await service_database.save(service)
+    result_service = await service_database.update(
+        service.id,
+        service,
+    )
 
-    return result  # .dict()
+    return {
+        **result.dict(),
+        "message": "Booking created successfully",
+        # "booking": result.dict(),
+        "service_available_bag": result_service.available_bag,  # .dict(include={"available_bag"}),
+    }
 
 
 @booking_router.put("/{booking_id}/confirm", response_model=Booking)
