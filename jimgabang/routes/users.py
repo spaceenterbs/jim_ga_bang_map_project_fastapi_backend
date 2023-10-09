@@ -15,7 +15,6 @@ from jose import JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러
 from auth.hash_password import HashPassword
 from auth.authenticate import authenticate_client, authenticate_host
 from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
-from beanie import PydanticObjectId
 
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
