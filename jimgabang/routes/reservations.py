@@ -287,6 +287,17 @@ async def get_all_bookings_by_client(
         booking for booking in all_bookings if booking.creator == current_user.email
     ]  # booking(expression) for item in iterable if condition
 
+    # Fetch the service details for each booking
+    for booking in bookings_by_client:
+        service = await Service.get(booking.service)
+        if service:
+            # Add the service details to the booking info
+            booking.service_info = {
+                "address": service.address,
+                "service_name": service.service_name,
+                "category": service.category,
+            }
+
     return bookings_by_client
 
 
@@ -519,6 +530,7 @@ async def create_booking(
 
     """
     body.creator = current_user.email  # 새로운 예약이 생성될 때 creator 필드가 함께 저장되도록 한다.
+
     # 클라이언트가 예약을 생성할 때, 해당 서비스의 ID(service 필드)로부터 서비스 정보를 가져온다.
     service = await service_database.get(body.service)  # 해당 서비스의 ID로부터 서비스 정보를 가져온다.
 
@@ -541,11 +553,17 @@ async def create_booking(
     # 서비스의 가용한 가방 수를 감소시킨다.
     service.available_bag -= body.booking_bag
 
+    # if not service.bookings:
+    #     service.bookings = []
+
+    # 새로 만든 booking 의 id 를 services 의 bookings 에 추가한다.
+    service.bookings.append(result.id)
+
     # save(생성) 대신 update(수정)를 사용하여 서비스의 가용한 가방 수를 감소시킨다.
     result_service = await service_database.update(service.id, service)
-    print(
-        type(result_service)
-    )  # result_service의 실제 타입이 딕셔너리인지, Pydantic 모델인지 확인한다. <class 'models.reservations.Service'> 이므로 Pydantic 모델이다.
+    # print(
+    #     type(result_service)
+    # )  # result_service의 실제 타입이 딕셔너리인지, Pydantic 모델인지 확인한다. <class 'models.reservations.Service'> 이므로 Pydantic 모델이다.
 
     return {
         "message": "Booking created successfully",

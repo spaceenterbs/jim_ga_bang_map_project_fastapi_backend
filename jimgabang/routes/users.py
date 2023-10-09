@@ -32,11 +32,12 @@ hash_password = HashPassword()
 
 
 @host_router.post("/signup")
-async def sign_new_host_up(current_user: Host) -> dict:
+async def sign_new_host_up(
+    current_user: Host,
+) -> dict:
     """
-    해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
-    등록 라우트에서는 애플리케이션에 내장된 데이터베이스를 사용한다.
-    이 라우트는 사용자를 등록하기 전 데이터베이스에 같은 이메일이 존재하는지 확인한다.
+    Host 등록 라우트\n
+    해당 이메일의 Host가 존재하는지 확인하고 없으면 DB에 등록한다.
     """
     host_exist = await Host.find_one(
         Host.email == current_user.email
@@ -47,11 +48,8 @@ async def sign_new_host_up(current_user: Host) -> dict:
             detail="Host with email provided exists already",
         )
 
-    """
-    사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
-    """
     hashed_password = hash_password.create_hash(current_user.password)
-    current_user.password = hashed_password
+    current_user.password = hashed_password  # 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
 
     result = await host_database.save(current_user)  # 데이터베이스에 host를 저장한다.
 
@@ -70,7 +68,8 @@ async def sign_host_in(
     # OAuth2PasswordRequestForm 클래스를 sign_host_in() 라우트 함수에 주입하여 해당 함수가 OAuth2 사양을 엄격하게 따르도록 한다.
     # 함수 내에서는 패스워드, 반환된 접속 토큰, 토큰 유형을 검증한다.
     """
-    해당 사용자가 존재하는지 확인하고 로그인하면 access, refresh 토큰을 반환한다.
+    해당 email을 사용하는 Host가 존재하는지 확인하고\n
+    로그인하면 access와 refresh 토큰, 그리고 토큰 유형을 반환한다.
     """
     host_exist = await Host.find_one(
         Host.email == host.username,
@@ -83,7 +82,7 @@ async def sign_host_in(
 
     if hash_password.verify_hash(
         host.password, host_exist.password
-    ):  # 사용자가 입력한 원본 비밀번호와, db에 저장돼있는 해시된 비밀번호를 비교한다.
+    ):  # 사용자가 입력한 원본 비밀번호와, DB에 저장돼있는 해시된 비밀번호를 비교한다.
         access_token = create_access_token(host_exist.email)
         refresh_token = create_refresh_token(host_exist.email)
         return {
@@ -93,7 +92,7 @@ async def sign_host_in(
         }
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid details passed",
+        detail="Invalid details passed for Host signin",
     )
 
 
@@ -103,8 +102,8 @@ async def refresh_host_access_token(
 ) -> dict:
     """
     refresh 토큰으로 access 토큰을 갱신한다.
-    1. 호스트는 서버에 로그인 요청을 보내고, 서버는 응답으로 access, refresh 토큰을 반환한다.
-    2. 호스트는 이 후의 요청에 대해 받은 access_token을 Authorization header에 담아서 보낸다.
+    1. 호스트는 서버에 로그인 요청(signin시)을 보내고, 서버는 응답으로 access, refresh 토큰, 그리고 토큰 유형을 반환한다.
+    2. 호스트는 이후의 요청에 대해 받은 access_token을 Authorization header에 담아서 보낸다.
     3. 만약 서버가 401 Unauthorized 응답(access_token 만료)을 반환하면, 호스트는 refresh_token을 사용하여 새로운 access_token을 요청한다.
     4. 서버는 refresh token을 검증하고, 유효한 경우 새로운 access_token과 refresh_token을 반환한다.
     """
@@ -115,7 +114,7 @@ async def refresh_host_access_token(
     if not host_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host with email does not exist.",
+            detail="Host with the email does not exist.",
         )
 
     try:
@@ -154,18 +153,22 @@ async def refresh_host_access_token(
 @host_router.get("/", response_model=Host)
 async def get_host(current_user: Host = Depends(authenticate_host)) -> Host:
     """
-    생성 목적: 호스트 정보를 가져온다.
+    생성 목적: Host 정보를 가져온다.
     """
 
-    host_id = current_user.id
-    host = await Host.find_one(Host.id == host_id)
+    # host_id = current_user.id
+    # host = await Host.find_one(Host.id == host_id)
 
-    if not host:
+    host_exist = await Host.find_one(
+        Host.email == current_user.email,
+    )  # Host 객체의 email 필드가 host.email과 일치하는 문서를 찾는다.
+
+    if not host_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Host not found",
+            detail="Host with the given access_token(email) not found",
         )
-    return host
+    return host_exist
 
 
 # @host_router.get("/{host_id}", response_model=Host)
@@ -257,7 +260,7 @@ async def update_host(
 @host_router.delete("/")
 async def delete_host(current_user: Host = Depends(authenticate_host)):
     """
-    생성 목적: 현재 호스트 정보 삭제합니다.
+    생성 목적: 현재 Host 정보를 삭제합니다.
     """
 
     # current_user 객체에서 호스트 ID 가져온다
@@ -268,15 +271,6 @@ async def delete_host(current_user: Host = Depends(authenticate_host)):
     return {
         "message": "Host deleted successfully.",
     }
-
-
-@host_router.get("/get-all", response_model=list[Host])
-async def get_all_hosts():
-    """
-    생성 목적: 모든 호스트 정보를 가져옵니다.
-    """
-    hosts = await host_database.get_all()
-    return hosts
 
 
 # @host_router.delete("/{host_id}")
@@ -325,9 +319,13 @@ async def sign_new_client_up(current_user: Client) -> dict:
     """
     hashed_password = hash_password.create_hash(current_user.password)
     current_user.password = hashed_password
-    await client_database.save(current_user)
+    result = await client_database.save(current_user)
+
     return {
         "message": "Client created successfully.",
+        "client": result.dict(
+            exclude={"password"},
+        ),  # password 필드를 제외한다.
     }
 
 
@@ -361,7 +359,7 @@ async def sign_client_in(
         }
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid details passed",
+        detail="Invalid details passed for Client signin",
     )
 
 
@@ -371,6 +369,10 @@ async def refresh_client_access_token(
 ) -> dict:
     """
     refresh 토큰으로 access 토큰을 갱신한다.
+    1. 호스트는 서버에 로그인 요청(signin시)을 보내고, 서버는 응답으로 access, refresh 토큰, 그리고 토큰 유형을 반환한다.
+    2. 호스트는 이후의 요청에 대해 받은 access_token을 Authorization header에 담아서 보낸다.
+    3. 만약 서버가 401 Unauthorized 응답(access_token 만료)을 반환하면, 호스트는 refresh_token을 사용하여 새로운 access_token을 요청한다.
+    4. 서버는 refresh token을 검증하고, 유효한 경우 새로운 access_token과 refresh_token을 반환한다.
     """
     client_exist = await Client.find_one(
         Client.email == client.username,
@@ -400,7 +402,9 @@ async def refresh_client_access_token(
                 "refresh_token": new_refresh_token,
                 "token_type": "Bearer ",
             }
-    except JWTError as jwt_error:
+    except (
+        JWTError
+    ) as jwt_error:  # verify_host_refresh_token() 함수를 호출하는 곳에서 발생한 예외를 처리한다.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid JWTError client token",
@@ -410,6 +414,49 @@ async def refresh_client_access_token(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid client email passed",
     )
+
+
+@client_router.get("/", response_model=Client)
+async def get_client(current_user: Client = Depends(authenticate_client)) -> Client:
+    """
+    생성 목적: Client 정보를 가져온다.
+    """
+
+    # client_id = current_user.id
+    # client = await Client.find_one(Client.id == client_id)
+
+    client_exist = await Client.find_one(
+        Client.email == current_user.email,
+    )  # Client 객체의 email 필드가 client.email과 일치하는 문서를 찾는다.
+
+    if not client_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client with teh given access_token(email) not found",
+        )
+    return client_exist
+
+
+# @client_router.get("/{client_id}", response_model=Client)
+# async def get_client(
+#     client_id: PydanticObjectId,
+#     current_user: Client = Depends(authenticate_client),
+# ) -> Client:
+#     """
+#     생성 목적: 클라이언트 정보를 id로 가져옵니다.
+#     """
+#     if current_user.id != client_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only get your own account",
+#         )
+#     client = await Client.find_one(Client.id == client_id)
+#     if not client:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Client not found",
+#         )
+#     return client
 
 
 @client_router.put("/", response_model=Client)
@@ -474,58 +521,10 @@ async def update_client(
 #     return updated_client
 
 
-@client_router.get("/", response_model=Client)
-async def get_client(current_user: Client = Depends(authenticate_client)) -> Client:
-    """
-    생성 목적: 호스트 정보 가져온다.
-    """
-
-    client_id = current_user.id
-    client = await Client.find_one(Client.id == client_id)
-
-    if not client:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Client not found",
-        )
-    return client
-
-
-# @client_router.get("/{client_id}", response_model=Client)
-# async def get_client(
-#     client_id: PydanticObjectId,
-#     current_user: Client = Depends(authenticate_client),
-# ) -> Client:
-#     """
-#     생성 목적: 클라이언트 정보를 id로 가져옵니다.
-#     """
-#     if current_user.id != client_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only get your own account",
-#         )
-#     client = await Client.find_one(Client.id == client_id)
-#     if not client:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Client not found",
-#         )
-#     return client
-
-
-@client_router.get("/get-all", response_model=list[Client])
-async def get_all_clients():
-    """
-    생성 목적: 모든 클라이언트 정보를 가져옵니다.
-    """
-    clients = await client_database.get_all()
-    return clients
-
-
 @client_router.delete("/")
 async def delete_client(current_user: Client = Depends(authenticate_client)):
     """
-    생성 목적: 현재 호스트 정보 삭제합니다.
+    생성 목적: 현재 Client 정보를 삭제한다.
     """
 
     # current_user 객체에서 호스트 ID 가져온다
@@ -569,6 +568,13 @@ async def delete_client(current_user: Client = Depends(authenticate_client)):
 ===================================================================================================
 """
 
+# @host_router.get("/get-all", response_model=list[Host])
+# async def get_all_hosts():
+#     """
+#     생성 목적: 모든 호스트 정보를 가져옵니다.
+#     """
+#     hosts = await host_database.get_all()
+#     return hosts
 
 # @host_router.delete("/delete-all")
 # async def delete_all_hosts():
@@ -577,6 +583,15 @@ async def delete_client(current_user: Client = Depends(authenticate_client)):
 #     """
 #     await host_database.delete_all()
 #     return {"message": "All hosts deleted successfully."}
+
+
+# @client_router.get("/get-all", response_model=list[Client])
+# async def get_all_clients():
+#     """
+#     생성 목적: 모든 클라이언트 정보를 가져옵니다.
+#     """
+#     clients = await client_database.get_all()
+#     return clients
 
 
 # @client_router.delete("/delete-all")

@@ -25,7 +25,7 @@ class Service(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "creator": "test@gmail.com",
+                    "creator": "host@gmail.com",
                     "service_name": "카페 짐가방",
                     "category": "카페",
                     "address": "서울특별시 강남구 역삼동 123-45",
@@ -33,7 +33,9 @@ class Service(Document):
                     "longitude": 37.123456,
                     "service_time": "09:00 ~ 18:00",
                     "service_date": [
-                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                        "2023-10-13",
+                        "2023-10-14",
+                        "2023-10-15",
                     ],
                     "available_bag": 5,
                     "total_available_bag": 5,
@@ -69,10 +71,14 @@ class ServiceUpdate(BaseModel):
                     "longitude": 37.123456,
                     "service_time": "09:00 ~ 18:00",
                     "service_date": [
-                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                        "2023-10-13",
+                        "2023-10-14",
+                        "2023-10-15",
+                        "2023-10-16",
+                        "2023-10-17",
                     ],
-                    "available_bag": 5,
-                    "total_available_bag": 5,
+                    "available_bag": 55,
+                    "total_available_bag": 55,
                 }
             ]
         }
@@ -90,12 +96,13 @@ class Booking(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "creator": "test@gmail.com",
+                    "creator": "client@gmail.com",
                     "booking_date": [
-                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                        "2023-10-13",
+                        "2023-10-14",
                     ],
                     "booking_bag": 5,
-                    "confirm": False,
+                    "confirm": "pending",
                     "service": "612c1c1c3e6a7f5f5a7f5f5a",
                 },
             ]
@@ -115,9 +122,12 @@ class BookingUpdate(BaseModel):
             "examples": [
                 {
                     "booking_date": [
-                        "2021-09-01, 2021-09-02, 2021-09-03, 2021-09-04, 2021-09-05"
+                        "2023-10-13",
+                        "2023-10-14",
+                        "2023-10-15",
+                        "2023-10-16",
                     ],
-                    "booking_bag": 5,
+                    "booking_bag": 10,
                 }
             ]
         }
@@ -131,7 +141,7 @@ class BookingConfirmUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "confirm": "cancelled",
+                    "confirm": "cancelled",  # "confirm": "confirmed",
                 }
             ]
         }

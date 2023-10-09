@@ -16,9 +16,9 @@ class Host(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "email": "test@gmail.com",
+                    "email": "host@gmail.com",
                     "password": "1234",
-                    "host_name": "test",
+                    "host_name": "host",
                 }
             ]
         }
@@ -34,7 +34,7 @@ class HostUpdate(BaseModel):
             "examples": [
                 {
                     "password": "12345",
-                    "host_name": "test1",
+                    "host_name": "host1",
                 }
             ]
         }
@@ -53,9 +53,9 @@ class Client(Document):
         "json_schema_extra": {
             "examples": [
                 {
-                    "email": "test@gmail.com",
+                    "email": "client@gmail.com",
                     "password": "1234",
-                    "client_name": "test",
+                    "client_name": "client",
                 }
             ]
         }
@@ -71,7 +71,7 @@ class ClientUpdate(BaseModel):
             "examples": [
                 {
                     "password": "12345",
-                    "client_name": "test1",
+                    "client_name": "client1",
                 }
             ]
         }
