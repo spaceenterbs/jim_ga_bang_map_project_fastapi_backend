@@ -272,10 +272,10 @@ async def get_all_bookings() -> List[Booking]:
     return bookings
 
 
-@booking_router.get("/client", response_model=List[Booking])
+@booking_router.get("/client")
 async def get_all_bookings_by_client(
     current_user: Client = Depends(authenticate_client),
-) -> List[Booking]:
+) -> List[dict]:
     """
     생성 목적: 클라이언트 자신이 예약한 모든 예약을 가져온다.
 
@@ -283,20 +283,29 @@ async def get_all_bookings_by_client(
     """
 
     all_bookings = await Booking.all().to_list()
-    bookings_by_client = [
-        booking for booking in all_bookings if booking.creator == current_user.email
-    ]  # booking(expression) for item in iterable if condition
 
-    # Fetch the service details for each booking
-    for booking in bookings_by_client:
-        service = await Service.get(booking.service)
-        if service:
-            # Add the service details to the booking info
-            booking.service_info = {
-                "address": service.address,
-                "service_name": service.service_name,
-                "category": service.category,
-            }
+    bookings_by_client = []
+
+    for booking in all_bookings:
+        if booking.creator == current_user.email:
+            service = await Service.get(booking.service)
+            booking_data = booking.dict()
+
+            if service is not None:
+                booking_data["service_name"] = service.service_name
+                booking_data["address"] = service.address
+                booking_data["category"] = service.category
+            else:
+                # Service not found - set some default values or ignore this reservation
+                booking_data["service_name"] = "Unknown"
+                booking_data["address"] = "Unknown"
+                booking_data["category"] = "Unknown"
+
+            bookings_by_client.append(booking_data)
+
+    # bookings_by_client = [
+    #     booking for booking in all_bookings if booking.creator == current_user.email
+    # ]  # booking(expression) for item in iterable if condition
 
     return bookings_by_client
 
@@ -553,14 +562,18 @@ async def create_booking(
     # 서비스의 가용한 가방 수를 감소시킨다.
     service.available_bag -= body.booking_bag
 
-    # if not service.bookings:
-    #     service.bookings = []
+    # 서비스의 bookings 필드가 None 이면 빈 리스트로 초기화한다.
+    if service.bookings is None:
+        service.bookings = []
 
     # 새로 만든 booking 의 id 를 services 의 bookings 에 추가한다.
     service.bookings.append(result.id)
 
     # save(생성) 대신 update(수정)를 사용하여 서비스의 가용한 가방 수를 감소시킨다.
-    result_service = await service_database.update(service.id, service)
+    result_service = await service_database.update(
+        service.id,
+        service,
+    )
     # print(
     #     type(result_service)
     # )  # result_service의 실제 타입이 딕셔너리인지, Pydantic 모델인지 확인한다. <class 'models.reservations.Service'> 이므로 Pydantic 모델이다.
