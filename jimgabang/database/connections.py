@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     또한 .env 파일에서 환경 변수를 읽어온다.
     """
 
-    DEBUG: bool = False  # 디버그 모드를 설정한다.
+    # DEBUG: bool = False  # 디버그 모드를 설정한다.
     SECRET_KEY: Optional[str] = None
     DATABASE_URL: Optional[str] = "default"  # 기본값을 설정한다.
 

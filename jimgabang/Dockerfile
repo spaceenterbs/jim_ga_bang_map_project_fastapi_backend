@@ -1,7 +1,7 @@
 # FROM python:3.11.6-bookworm
-FROM tiangolo/tiangolo/uvicorn-gunicorn-fastapi:python3.11
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11
 
-ENV APP_MODULE app.main:app
+ENV APP_MODULE main:app
 
 # WORKDIR /app
 
