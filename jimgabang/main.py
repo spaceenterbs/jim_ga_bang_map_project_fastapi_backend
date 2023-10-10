@@ -30,6 +30,10 @@ app = FastAPI()  # debug=True)
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://jimgabang.store",  # 도메인 이름 및 포트 번호를 기반으로 출처를 확인하므로 경로(path)인 "/"는 안 적어줘도 된다.
+    "http://www.jimgabang.store",
+    "https://jimgabang.store",
+    "https://www.jimgabang.store",
 ]  # ["*"] 어떤 출처(origin)에서 들어오는 요청을 허용할지 설정한다.
 
 # add_middleware() 메서드를 사용해 미들웨어를 등록한다.
