@@ -113,12 +113,6 @@ class Booking(Document):
         name = "bookings"  # Event 모델을 사용하여 MongoDB에 저장할 때 사용할 컬렉션 이름을 정의. 기본값은 모델 이름의 소문자 복수형이다. 사용자 컬렉션을 사용하려면 이 값을 설정해야 한다.
 
 
-class BookingUpdateResponse(BaseModel):
-    message: str
-    updated_booking: Booking
-    service_available_bag: int
-
-
 class BookingUpdate(BaseModel):
     booking_date: Optional[List[str]]
     booking_bag: Optional[int]
@@ -154,7 +148,19 @@ class BookingConfirmUpdate(BaseModel):
     }
 
 
+class BookingUpdateResponse(BaseModel):
+    message: str
+    updated_booking: Booking
+    service_available_bag: int
+
+
 class BookingStatusUpdateResponse(BaseModel):
     message: str
     updated_booking: Booking
     service_available_bag: int
+
+
+class BookingServiceNameResponse(BaseModel):
+    message: str
+    booking: Booking
+    service_name: str

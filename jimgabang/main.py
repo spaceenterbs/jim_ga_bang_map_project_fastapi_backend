@@ -19,9 +19,9 @@ import uvicorn
 
 # logging.basicConfig(level=logging.DEBUG)
 
-app = FastAPI(debug=True)
-
 settings = Settings()
+
+app = FastAPI()  # debug=True)
 
 
 # 출처 등록

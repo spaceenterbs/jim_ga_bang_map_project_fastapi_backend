@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     또한 .env 파일에서 환경 변수를 읽어온다.
     """
 
+    DEBUG: bool = False  # 디버그 모드를 설정한다.
     SECRET_KEY: Optional[str] = None
     DATABASE_URL: Optional[str] = "default"  # 기본값을 설정한다.
 
@@ -51,7 +52,11 @@ class Settings(BaseSettings):
         2. document_models: Beanie에서 사용할 Pydantic 기반의 문서 모델들(Host, Client, Service, Booking)을 리스트 형태로 전달한다. 이 모델들은 MongoDB의 컬렉션과 매핑되며, 각각의 모델은 해당 컬렉션의 문서와 매핑된다.
         """
 
-    class Config:  # db URL을 .env 파일에서 읽어온다.
+    class Config:  # DB URL을 .env 파일에서 읽어온다
+        """
+        로컬에서 개발할 때, 환경 변수를 수동으로 설정하는 것은 성가신 일이다. 특히나 여러 프로젝트를 관리한다면 더욱 귀찮아진다. 이 문제를 해결하기 위해 Pydantic에서는 .env 파일에서 값들을 읽어올 수 있게 한다. python-dotenv를 설치하고 Settings 클래스에 Config 클래스를 추가로 선언하고 env_file 필드를 추가한다.
+        """
+
         env_file = ".env"
 
 

@@ -7,10 +7,11 @@ from models.reservations import (
     Service,
     ServiceUpdate,
     Booking,
-    BookingUpdateResponse,
     BookingUpdate,
     BookingConfirmUpdate,
+    BookingUpdateResponse,
     BookingStatusUpdateResponse,
+    BookingServiceNameResponse,
 )
 from typing import List
 from auth.authenticate import authenticate_host, authenticate_client
@@ -187,11 +188,13 @@ async def get_service_by_id(
     return service
 
 
-@service_router.get("/{service_id}/bookings", response_model=List[Booking])
+@service_router.get(
+    "/{service_id}/bookings", response_model=List[BookingServiceNameResponse]
+)
 async def get_bookings_for_service(
     service_id: PydanticObjectId,
     current_user: Host = Depends(authenticate_host),
-) -> List[Booking]:
+) -> List[BookingServiceNameResponse]:
     """7번\n
     생성 목적: 호스트가 자신의 서비스에 들어온 모든 예약을 추출한다.
     """
@@ -212,7 +215,7 @@ async def get_bookings_for_service(
     # if service.bookings is None:
     #     service.bookings = []
 
-    bookings = []
+    bookings_response = []
 
     if service.bookings is not None:  # 서비스에 예약이 존재하는지 확인한다.
         for booking_id in service.bookings:
@@ -221,9 +224,15 @@ async def get_bookings_for_service(
             if not booking:
                 continue  # 예약이 존재하지 않으면 건너뛴다.
 
-            bookings.append(booking)
+            booking_info = BookingServiceNameResponse(
+                message="Successful retrieval of booking informations",
+                booking=booking,
+                service_name=service.service_name,
+            )
 
-    return bookings
+            bookings_response.append(booking_info)
+
+    return bookings_response
 
 
 @service_router.post("/new")
