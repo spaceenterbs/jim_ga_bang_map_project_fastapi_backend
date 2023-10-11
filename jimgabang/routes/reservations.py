@@ -503,7 +503,7 @@ async def get_booking_by_id(
     """
     booking = await Booking.get(
         booking_id,
-        # creator=current_user.email,
+        creator=current_user.email,
     )
     if not booking:
         raise HTTPException(

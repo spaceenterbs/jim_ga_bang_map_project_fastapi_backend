@@ -28,6 +28,8 @@ app = FastAPI()  # debug=True)
 
 # origins 배열을 등록하고
 origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://jimgabang.store",  # 도메인 이름 및 포트 번호를 기반으로 출처를 확인하므로 경로(path)인 "/"는 안 적어줘도 된다.

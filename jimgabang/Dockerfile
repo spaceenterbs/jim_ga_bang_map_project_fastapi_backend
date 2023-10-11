@@ -17,7 +17,27 @@ COPY ./ /app
 
 # CMD ["python", "main.py"]
 
-# tiangolo/uvicorn-gunicorn-fastapi:python3.11
+
+# FROM python:3.11.6-bookworm
+
+# WORKDIR /app
+
+# COPY requirements.txt /app/requirements.txt
+
+# RUN pip install --upgrade pip && pip install -r /app/requirements.txt
+
+# EXPOSE 8000
+
+# COPY ./ /app
+
+# CMD ["python", "main.py"]
+
+
+
+
+
+
+# # tiangolo/uvicorn-gunicorn-fastapi:python3.11
 # FROM python:3.11-slim
 
 # LABEL maintainer="Sebastian Ramirez <tiangolo@gmail.com>"

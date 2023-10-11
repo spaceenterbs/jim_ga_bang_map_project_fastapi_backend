@@ -11,10 +11,16 @@ from auth.jwt_handler import (
 )
 from database.connections import Database
 from jose import JWTError  # JWT를 인코딩, 디코딩하는 jose 라이브러리
-
 from auth.hash_password import HashPassword
 from auth.authenticate import authenticate_client, authenticate_host
-from models.users import Host, Client, TokenResponse, HostUpdate, ClientUpdate
+from models.users import (
+    Host,
+    HostResponse,
+    Client,
+    TokenResponse,
+    HostUpdate,
+    ClientUpdate,
+)
 
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
@@ -30,24 +36,25 @@ client_database = Database(Client)
 hash_password = HashPassword()
 
 
-@host_router.post("/signup")
+@host_router.post("/signup")  # response_model=HostResponse)
 async def sign_new_host_up(
-    current_user: Host,
+    current_user: Host,  # 라우트 함수가 호출될 때 전달되는 인자인 'current_user'는 'Host' 타입으로 정의되어 있고 'Host' 데이터 모델 형식에 맞는 데이터를 전달해야 함을 의미한다.
 ) -> dict:
     """
     Host 등록 라우트\n
     해당 이메일의 Host가 존재하는지 확인하고 없으면 DB에 등록한다.
     """
     host_exist = await Host.find_one(
-        Host.email == current_user.email
-    )  # Host 객체의 email 필드가 host.email과 일치하는 문서를 찾는다.
+        Host.email
+        == current_user.email  # 전달받은 'current_user' 객체의 'email' 필드 값과 일치하는 'Host' 객체(문서 내)의 email 필드 값을 찾는다.
+    )
     if host_exist:  # 이미 존재하는 이메일이라면 409 상태 코드를 반환한다.
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Host with email provided exists already",
+            detail="Host with the email provided already exists",
         )
 
-    hashed_password = hash_password.create_hash(current_user.password)
+    hashed_password = hash_password.create_hash(current_user.password)  # 패스워드를 해싱한 후 저장
     current_user.password = hashed_password  # 사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
 
     result = await host_database.save(current_user)  # 데이터베이스에 host를 저장한다.
@@ -55,8 +62,9 @@ async def sign_new_host_up(
     return {
         "message": "Host created successfully.",
         "host": result.dict(
-            exclude={"password"}
-        ),  # dict() 메서드를 사용하여 Host 모델의 모든 필드를 딕셔너리로 변환한다. exclude 매개변수를 사용하여 password 필드를 제외한다.
+            exclude={"password"},
+        ),  # dict() 메서드를 사용하여 Host 모델의 모든 필드를 딕셔너리로 변환한다. exclude 매개변수를 사용하여 password 필드를 제외한다. or include "email", "host_name",
+        # 여기서는 password 필드를 제외하기 위해 response_model을 인자로 받지 않는다.
     }
 
 
@@ -170,27 +178,6 @@ async def get_host(current_user: Host = Depends(authenticate_host)) -> Host:
     return host_exist
 
 
-# @host_router.get("/{host_id}", response_model=Host)
-# async def get_host(
-#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-# ) -> Host:
-#     """
-#     생성 목적: 호스트 정보를 id로 가져온다.
-#     """
-#     if current_user.id != host_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only get your own account",
-#         )
-#     host = await Host.find_one(Host.id == host_id)
-#     if not host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Host not found",
-#         )
-#     return host
-
-
 @host_router.put("/", response_model=Host)
 async def update_host(
     body: HostUpdate,
@@ -218,6 +205,42 @@ async def update_host(
         )
     return updated_host
 
+
+@host_router.delete("/")
+async def delete_host(current_user: Host = Depends(authenticate_host)):
+    """
+    생성 목적: 현재 Host 정보를 삭제합니다.
+    """
+
+    # current_user 객체에서 호스트 ID 가져온다
+    host_id = current_user.id
+
+    await host_database.delete(host_id)
+
+    return {
+        "message": "Host deleted successfully.",
+    }
+
+
+# @host_router.get("/{host_id}", response_model=Host)
+# async def get_host(
+#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+# ) -> Host:
+#     """
+#     생성 목적: 호스트 정보를 id로 가져온다.
+#     """
+#     if current_user.id != host_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only get your own account",
+#         )
+#     host = await Host.find_one(Host.id == host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host not found",
+#         )
+#     return host
 
 # @host_router.put("/{host_id}", response_model=Host)
 # async def update_host(
@@ -254,23 +277,6 @@ async def update_host(
 #             detail="No Host update has been made",
 #         )
 #     return updated_host
-
-
-@host_router.delete("/")
-async def delete_host(current_user: Host = Depends(authenticate_host)):
-    """
-    생성 목적: 현재 Host 정보를 삭제합니다.
-    """
-
-    # current_user 객체에서 호스트 ID 가져온다
-    host_id = current_user.id
-
-    await host_database.delete(host_id)
-
-    return {
-        "message": "Host deleted successfully.",
-    }
-
 
 # @host_router.delete("/{host_id}")
 # async def delete_host(
@@ -436,28 +442,6 @@ async def get_client(current_user: Client = Depends(authenticate_client)) -> Cli
     return client_exist
 
 
-# @client_router.get("/{client_id}", response_model=Client)
-# async def get_client(
-#     client_id: PydanticObjectId,
-#     current_user: Client = Depends(authenticate_client),
-# ) -> Client:
-#     """
-#     생성 목적: 클라이언트 정보를 id로 가져옵니다.
-#     """
-#     if current_user.id != client_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only get your own account",
-#         )
-#     client = await Client.find_one(Client.id == client_id)
-#     if not client:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Client not found",
-#         )
-#     return client
-
-
 @client_router.put("/", response_model=Client)
 async def update_client(
     body: ClientUpdate,
@@ -485,6 +469,47 @@ async def update_client(
         )
     return updated_client
 
+
+@client_router.delete("/")
+async def delete_client(current_user: Client = Depends(authenticate_client)):
+    """
+    생성 목적: 현재 Client 정보를 삭제한다.
+    """
+
+    # current_user 객체에서 호스트 ID 가져온다
+    client_id = current_user.id
+
+    await client_database.delete(client_id)
+
+    return {
+        "message": "Client deleted successfully.",
+    }
+
+
+"""
+===================================================================================================
+"""
+
+# @client_router.get("/{client_id}", response_model=Client)
+# async def get_client(
+#     client_id: PydanticObjectId,
+#     current_user: Client = Depends(authenticate_client),
+# ) -> Client:
+#     """
+#     생성 목적: 클라이언트 정보를 id로 가져옵니다.
+#     """
+#     if current_user.id != client_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only get your own account",
+#         )
+#     client = await Client.find_one(Client.id == client_id)
+#     if not client:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Client not found",
+#         )
+#     return client
 
 # @client_router.put("/{client_id}", response_model=Client)
 # async def update_client(
@@ -519,54 +544,6 @@ async def update_client(
 #         )
 #     return updated_client
 
-
-@client_router.delete("/")
-async def delete_client(current_user: Client = Depends(authenticate_client)):
-    """
-    생성 목적: 현재 Client 정보를 삭제한다.
-    """
-
-    # current_user 객체에서 호스트 ID 가져온다
-    client_id = current_user.id
-
-    await client_database.delete(client_id)
-
-    return {
-        "message": "Client deleted successfully.",
-    }
-
-
-# @client_router.delete("/{client_id}")
-# async def delete_client(
-#     client_id: PydanticObjectId,  # 삭제할 Client 계정의 ID를 받는다.
-#     current_user: Client = Depends(authenticate_client),
-# ):
-#     """
-#     생성 목적: 현재 호스트 정보를 삭제합니다.
-#     """
-#     if client_id != current_user.id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only delete your own account",
-#         )
-
-#     client = await Client.get(client_id)
-#     if not client:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Client account not found",
-#         )
-
-#     await client_database.delete(current_user.id)
-#     return {
-#         "message": "Client deleted successfully.",
-#     }
-
-
-"""
-===================================================================================================
-"""
-
 # @host_router.get("/get-all", response_model=list[Host])
 # async def get_all_hosts():
 #     """
@@ -600,3 +577,29 @@ async def delete_client(current_user: Client = Depends(authenticate_client)):
 #     """
 #     await client_database.delete_all()
 #     return {"message": "All clients deleted successfully."}
+
+# @client_router.delete("/{client_id}")
+# async def delete_client(
+#     client_id: PydanticObjectId,  # 삭제할 Client 계정의 ID를 받는다.
+#     current_user: Client = Depends(authenticate_client),
+# ):
+#     """
+#     생성 목적: 현재 호스트 정보를 삭제합니다.
+#     """
+#     if client_id != current_user.id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only delete your own account",
+#         )
+
+#     client = await Client.get(client_id)
+#     if not client:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Client account not found",
+#         )
+
+#     await client_database.delete(current_user.id)
+#     return {
+#         "message": "Client deleted successfully.",
+#     }

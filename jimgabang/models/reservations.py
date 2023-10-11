@@ -16,7 +16,7 @@ class Service(Document):
     latitude: float
     longitude: float
     service_time: str
-    service_date: Optional[List[str]] = None
+    service_date: List[str]
     available_bag: int
     service_date_available_bag: Optional[List[Dict[str, int]]] = None
     total_available_bag: int
@@ -40,10 +40,10 @@ class Service(Document):
                     ],
                     "available_bag": 5,
                     "service_date_available_bag": [
-                        {"2023-10-13", 5},
-                        {"2023-10-14", 5},
-                        {"2023-10-15", 5},
-                    ],  # {"2023-10-13", 5}, {"2023-10-14", 5}, {"2023-10-15", 5}, {"2023-10-16", 5},
+                        {"date": "2023-10-13", "bag": 5},
+                        {"date": "2023-10-14", "bag": 5},
+                        {"date": "2023-10-15", "bag": 5},
+                    ],
                     "total_available_bag": 5,
                     "bookings": [],
                 }
@@ -64,7 +64,6 @@ class ServiceUpdate(BaseModel):
     service_time: Optional[str]
     service_date: Optional[List[str]]
     available_bag: Optional[int]
-    service_date_available_bag: Optional[List[Dict[str, int]]] = None
     total_available_bag: Optional[int]
 
     model_config = {
@@ -85,13 +84,13 @@ class ServiceUpdate(BaseModel):
                         "2023-10-17",
                     ],
                     "available_bag": 55,
-                    "service_date_available_bag": [
-                        {"2023-10-13", 5},
-                        {"2023-10-14", 5},
-                        {"2023-10-15", 5},
-                        {"2023-10-16", 5},
-                        {"2023-10-17", 5},
-                    ],
+                    # "service_date_available_bag": [
+                    #     {"date": "2023-10-13", "bag": 5},
+                    #     {"date": "2023-10-14", "bag": 5},
+                    #     {"date": "2023-10-15", "bag": 5},
+                    #     {"date": "2023-10-16", "bag": 5},
+                    #     {"date": "2023-10-17", "bag": 5},
+                    # ],
                     "total_available_bag": 55,
                 }
             ]
@@ -118,9 +117,9 @@ class Booking(Document):
                     ],
                     "booking_bag": 5,
                     "booking_date_booking_bag": [
-                        {"2023-10-13", 5},
-                        {"2023-10-14", 5},
-                    ],  # {"2023-10-13", 5}, {"2023-10-14", 5}, {"2023-10-15", 5}, {"2023-10-16", 5},
+                        {"date": "2023-10-13", "bag": 5},
+                        {"date": "2023-10-14", "bag": 5},
+                    ],
                     "confirm": "pending",
                     "service": "612c1c1c3e6a7f5f5a7f5f5a",
                 },
@@ -135,7 +134,7 @@ class Booking(Document):
 class BookingUpdate(BaseModel):
     booking_date: Optional[List[str]]
     booking_bag: Optional[int]
-    booking_date_booking_bag: Optional[List[Dict[str, int]]]
+    # booking_date_booking_bag: Optional[List[Dict[str, int]]]
 
     model_config = {
         "json_schema_extra": {
@@ -148,12 +147,12 @@ class BookingUpdate(BaseModel):
                         "2023-10-16",
                     ],
                     "booking_bag": 10,
-                    "booking_date_booking_bag": [
-                        {"2023-10-13", 5},
-                        {"2023-10-14", 5},
-                        {"2023-10-15", 5},
-                        {"2023-10-16", 5},
-                    ],
+                    # "booking_date_booking_bag": [
+                    #     {"date": "2023-10-13", "bag": 5},
+                    #     {"date": "2023-10-14", "bag": 5},
+                    #     {"date": "2023-10-15", "bag": 5},
+                    #     {"date": "2023-10-16", "bag": 5},
+                    # ],
                 }
             ]
         }
@@ -161,7 +160,7 @@ class BookingUpdate(BaseModel):
 
 
 class BookingConfirmUpdate(BaseModel):
-    confirm: Optional[str]  # confirm: Optional[bool]
+    confirm: Optional[str]
 
     model_config = {
         "json_schema_extra": {

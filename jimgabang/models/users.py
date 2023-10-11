@@ -94,3 +94,8 @@ class TokenResponse(BaseModel):
             ]
         }
     }
+
+
+# class HostResponse(BaseModel):
+#     message: str
+#     host: Host
