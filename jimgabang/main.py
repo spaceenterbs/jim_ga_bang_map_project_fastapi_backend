@@ -49,19 +49,19 @@ app.add_middleware(
 # 라우트 등록
 app.include_router(
     host_router,
-    prefix="/host",
+    prefix="/api/host",
 )
 app.include_router(
     client_router,
-    prefix="/client",
+    prefix="/api/client",
 )
 app.include_router(
     service_router,
-    prefix="/service",
+    prefix="/api/service",
 )
 app.include_router(
     booking_router,
-    prefix="/booking",
+    prefix="/api/booking",
 )
 
 

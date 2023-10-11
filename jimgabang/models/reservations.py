@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr
 from beanie import Document
 
 # from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Dict
 from beanie import PydanticObjectId
 
 
@@ -18,6 +18,7 @@ class Service(Document):
     service_time: str
     service_date: Optional[List[str]] = None
     available_bag: int
+    service_date_available_bag: Optional[List[Dict[str, int]]] = None
     total_available_bag: int
     bookings: Optional[List[PydanticObjectId]] = None
 
@@ -38,6 +39,11 @@ class Service(Document):
                         "2023-10-15",
                     ],
                     "available_bag": 5,
+                    "service_date_available_bag": [
+                        {"2023-10-13", 5},
+                        {"2023-10-14", 5},
+                        {"2023-10-15", 5},
+                    ],  # {"2023-10-13", 5}, {"2023-10-14", 5}, {"2023-10-15", 5}, {"2023-10-16", 5},
                     "total_available_bag": 5,
                     "bookings": [],
                 }
@@ -58,6 +64,7 @@ class ServiceUpdate(BaseModel):
     service_time: Optional[str]
     service_date: Optional[List[str]]
     available_bag: Optional[int]
+    service_date_available_bag: Optional[List[Dict[str, int]]] = None
     total_available_bag: Optional[int]
 
     model_config = {
@@ -78,6 +85,13 @@ class ServiceUpdate(BaseModel):
                         "2023-10-17",
                     ],
                     "available_bag": 55,
+                    "service_date_available_bag": [
+                        {"2023-10-13", 5},
+                        {"2023-10-14", 5},
+                        {"2023-10-15", 5},
+                        {"2023-10-16", 5},
+                        {"2023-10-17", 5},
+                    ],
                     "total_available_bag": 55,
                 }
             ]
@@ -89,6 +103,7 @@ class Booking(Document):
     creator: Optional[EmailStr] = None  # 해당 이벤트를 소유한 사용자만 처리할 수 있도록 한다.
     booking_date: List[str]
     booking_bag: int
+    booking_date_booking_bag: Optional[List[Dict[str, int]]] = None
     confirm: Optional[str] = "pending"  # confirm: Optional[bool] = False
     service: PydanticObjectId  # 서비스와 연결된다.
 
@@ -102,6 +117,10 @@ class Booking(Document):
                         "2023-10-14",
                     ],
                     "booking_bag": 5,
+                    "booking_date_booking_bag": [
+                        {"2023-10-13", 5},
+                        {"2023-10-14", 5},
+                    ],  # {"2023-10-13", 5}, {"2023-10-14", 5}, {"2023-10-15", 5}, {"2023-10-16", 5},
                     "confirm": "pending",
                     "service": "612c1c1c3e6a7f5f5a7f5f5a",
                 },
@@ -116,6 +135,7 @@ class Booking(Document):
 class BookingUpdate(BaseModel):
     booking_date: Optional[List[str]]
     booking_bag: Optional[int]
+    booking_date_booking_bag: Optional[List[Dict[str, int]]]
 
     model_config = {
         "json_schema_extra": {
@@ -128,6 +148,12 @@ class BookingUpdate(BaseModel):
                         "2023-10-16",
                     ],
                     "booking_bag": 10,
+                    "booking_date_booking_bag": [
+                        {"2023-10-13", 5},
+                        {"2023-10-14", 5},
+                        {"2023-10-15", 5},
+                        {"2023-10-16", 5},
+                    ],
                 }
             ]
         }
