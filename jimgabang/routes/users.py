@@ -15,7 +15,6 @@ from auth.hash_password import HashPassword
 from auth.authenticate import authenticate_client, authenticate_host
 from models.users import (
     Host,
-    HostResponse,
     Client,
     TokenResponse,
     HostUpdate,
@@ -46,7 +45,7 @@ async def sign_new_host_up(
     """
     host_exist = await Host.find_one(
         Host.email
-        == current_user.email  # 전달받은 'current_user' 객체의 'email' 필드 값과 일치하는 'Host' 객체(문서 내)의 email 필드 값을 찾는다.
+        == current_user.email,  # 전달받은 'current_user' 객체의 'email' 필드 값과 일치하는 'Host' 객체(문서 내)의 email 필드 값을 찾는다.
     )
     if host_exist:  # 이미 존재하는 이메일이라면 409 상태 코드를 반환한다.
         raise HTTPException(
@@ -309,15 +308,18 @@ async def delete_host(current_user: Host = Depends(authenticate_host)):
 
 
 @client_router.post("/signup")
-async def sign_new_client_up(current_user: Client) -> dict:
+async def sign_new_client_up(
+    current_user: Client,
+) -> dict:
     """
-    해당 이메일의 사용자가 존재하는지 확인하고 없으면 db에 등록한다.
+    Client 등록 라우트\n
+    해당 이메일의 Client가 존재하는지 확인하고 없으면 DB에 등록한다.
     """
     client_exist = await Client.find_one(Client.email == current_user.email)
     if client_exist:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Client with email provided exists already",
+            detail="Client with the email provided already exists",
         )
     """
     사용자 등록 라우트가 사용자를 등록할 때 패스워드를 해싱한 후 저장
@@ -329,8 +331,8 @@ async def sign_new_client_up(current_user: Client) -> dict:
     return {
         "message": "Client created successfully.",
         "client": result.dict(
-            exclude={"password"},
-        ),  # password 필드를 제외한다.
+            exclude={"password"},  # password 필드를 제외한다.
+        ),
     }
 
 
