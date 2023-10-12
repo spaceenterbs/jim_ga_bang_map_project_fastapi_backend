@@ -25,22 +25,6 @@ class Host(Document):
     }
 
 
-class HostUpdate(BaseModel):
-    password: Optional[str]
-    host_name: Optional[str]
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "password": "12345",
-                    "host_name": "host1",
-                }
-            ]
-        }
-    }
-
-
 class Client(Document):
     email: EmailStr
     password: str
@@ -56,6 +40,22 @@ class Client(Document):
                     "email": "client@gmail.com",
                     "password": "1234",
                     "client_name": "client",
+                }
+            ]
+        }
+    }
+
+
+class HostUpdate(BaseModel):
+    password: Optional[str]
+    host_name: Optional[str]
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "password": "12345",
+                    "host_name": "host1",
                 }
             ]
         }

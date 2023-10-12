@@ -56,30 +56,6 @@ async def get_all_services_by_host(
     return services_by_host
 
 
-# @service_router.get("/host/{host_id}", response_model=List[Service])
-# async def get_all_services_by_host(
-#     host_id: PydanticObjectId,
-#     current_user: Host = Depends(authenticate_host),
-# ) -> List[Service]:
-#     """2번\n
-#     생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
-#     \n
-#     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
-#     """
-#     if current_user.id != host_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Not authorized to get services",
-#         )
-
-#     all_services = await Service.all()
-#     services_by_host = [
-#         service for service in all_services if service.creator == current_user.email
-#     ]  # service(expression) for item in iterable if condition
-
-#     return services_by_host
-
-
 @service_router.get("/{service_id}", response_model=Service)
 async def get_service(service_id: PydanticObjectId) -> Service:
     """3번\n
@@ -95,7 +71,7 @@ async def get_service(service_id: PydanticObjectId) -> Service:
 
 
 @service_router.put("/{service_id}", response_model=Service)
-async def update_service(
+async def update_service_by_host(
     service_id: PydanticObjectId,
     body: ServiceUpdate,
     current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
@@ -130,7 +106,7 @@ async def update_service(
 
 
 @service_router.delete("/{service_id}")
-async def delete_service(
+async def delete_service_by_host(
     service_id: PydanticObjectId,
     current_user: Host = Depends(authenticate_host),  # 의존성 주입을 사용하여 사용자가 로그인했는지 확인한다.
 ):
@@ -175,10 +151,10 @@ async def get_service_by_id(
     \n
     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 특정 서비스를 보여주기 위해 사용된다.
     """
-    # 호스트가 자신의 서비스 중에서 service_id에 해당하는 서비스를 가져옵니다.
+    # 호스트가 자신의 서비스 중에서 service_id에 해당하는 서비스를 가져온다.
     service = await Service.get(
         service_id,
-        # creator=current_user.email,
+        creator=current_user.email,
     )
     if not service:
         raise HTTPException(
@@ -189,9 +165,10 @@ async def get_service_by_id(
 
 
 @service_router.get(
-    "/{service_id}/bookings", response_model=List[BookingServiceNameResponse]
+    "/{service_id}/bookings",
+    response_model=List[BookingServiceNameResponse],
 )
-async def get_bookings_for_service(
+async def get_bookings_of_service(
     service_id: PydanticObjectId,
     current_user: Host = Depends(authenticate_host),
 ) -> List[BookingServiceNameResponse]:
@@ -263,18 +240,6 @@ async def create_service(
     }
 
 
-# @service_router.delete("/delete-all")
-# async def delete_all_services():
-#     """9번\n
-#     생성 목적: 테스트를 위해 모든 서비스를 삭제한다.
-#     \n
-#     """
-#     await service_database.delete_all()
-#     return {
-#         "message": "All Services deleted successfully",
-#     }
-
-
 """
 ==========================================================================================
 """
@@ -336,30 +301,6 @@ async def get_all_bookings_by_client(
     return bookings_by_client
 
 
-# @booking_router.get("/client/{client_id}", response_model=List[Booking])
-# async def get_user_bookings(
-#     client_id: PydanticObjectId,
-#     current_user: Client = Depends(authenticate_client),
-# ):
-#     """2번\n
-#     생성 목적: 클라이언트 자신의 예약을 추출한다.
-#     \n
-#     """
-#     if current_user.id != client_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Not authorized to get bookings",
-#         )
-
-#     all_bookings = await Booking.all()
-
-#     bookings_by_client = [
-#         booking for booking in all_bookings if booking.creator == current_user.email
-#     ]  # booking(expression) for item in iterable if condition
-
-#     return bookings_by_client
-
-
 @booking_router.get("/{booking_id}", response_model=Booking)
 async def get_booking(booking_id: PydanticObjectId) -> Booking:
     """3번\n
@@ -377,7 +318,7 @@ async def get_booking(booking_id: PydanticObjectId) -> Booking:
 
 
 @booking_router.put("/{booking_id}", response_model=BookingUpdateResponse)
-async def update_booking(
+async def update_booking_by_client(
     booking_id: PydanticObjectId,
     body: BookingUpdate,
     current_user: Client = Depends(
@@ -439,13 +380,13 @@ async def update_booking(
 
     return {
         "message": "Booking has been successfully updated",
-        "updated_booking": updated_booking.dict(),
+        "updated_booking": updated_booking,
         "service_available_bag": service.available_bag,
     }
 
 
 @booking_router.delete("/{booking_id}")
-async def delete_booking_bag(
+async def delete_booking_by_client(
     booking_id: PydanticObjectId,
     current_user: Client = Depends(authenticate_client),
 ):
@@ -492,7 +433,7 @@ async def delete_booking_bag(
 
 
 @booking_router.get("/client/{booking_id}", response_model=Booking)
-async def get_booking_by_id(
+async def get_booking_by_client(
     booking_id: PydanticObjectId,
     current_user: Client = Depends(authenticate_client),
 ) -> Booking:
@@ -514,7 +455,7 @@ async def get_booking_by_id(
 
 
 @booking_router.get("/{booking_id}/service", response_model=Service)
-async def get_service_for_booking(
+async def get_service_of_booking(
     booking_id: PydanticObjectId,
     current_user: Client = Depends(authenticate_client),
 ) -> Service:
@@ -615,7 +556,7 @@ async def create_booking(
 
 
 @booking_router.put("/{booking_id}/status", response_model=BookingStatusUpdateResponse)
-async def update_booking_status(
+async def update_booking_status_by_host(
     booking_id: PydanticObjectId,
     body: BookingConfirmUpdate,
     current_user: Host = Depends(authenticate_host),
@@ -665,6 +606,44 @@ async def update_booking_status(
     )
 
 
+"""
+========================================================================
+"""
+
+# @service_router.get("/host/{host_id}", response_model=List[Service])
+# async def get_all_services_by_host(
+#     host_id: PydanticObjectId,
+#     current_user: Host = Depends(authenticate_host),
+# ) -> List[Service]:
+#     """2번\n
+#     생성 목적: 호스트 자신이 만든 모든 서비스를 가져온다.
+#     \n
+#     호스트 admin 페이지에서 호스트 인증된 사용자에게 자신이 만든 서비스를 보여주기 위해 사용된다.
+#     """
+#     if current_user.id != host_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Not authorized to get services",
+#         )
+
+#     all_services = await Service.all()
+#     services_by_host = [
+#         service for service in all_services if service.creator == current_user.email
+#     ]  # service(expression) for item in iterable if condition
+
+#     return services_by_host
+
+# @service_router.delete("/delete-all")
+# async def delete_all_services():
+#     """9번\n
+#     생성 목적: 테스트를 위해 모든 서비스를 삭제한다.
+#     \n
+#     """
+#     await service_database.delete_all()
+#     return {
+#         "message": "All Services deleted successfully",
+#     }
+
 # @booking_router.put("/{booking_id}/confirm", response_model=Booking)
 # async def update_booking_confirm(
 #     booking_id: PydanticObjectId,
@@ -692,6 +671,29 @@ async def update_booking_status(
 #             detail="No Booking update has been made",
 #         )
 #     return updated_booking
+
+# @booking_router.get("/client/{client_id}", response_model=List[Booking])
+# async def get_user_bookings(
+#     client_id: PydanticObjectId,
+#     current_user: Client = Depends(authenticate_client),
+# ):
+#     """2번\n
+#     생성 목적: 클라이언트 자신의 예약을 추출한다.
+#     \n
+#     """
+#     if current_user.id != client_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Not authorized to get bookings",
+#         )
+
+#     all_bookings = await Booking.all()
+
+#     bookings_by_client = [
+#         booking for booking in all_bookings if booking.creator == current_user.email
+#     ]  # booking(expression) for item in iterable if condition
+
+#     return bookings_by_client
 
 
 # @booking_router.delete("/delete-all")

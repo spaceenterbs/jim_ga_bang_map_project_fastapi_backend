@@ -21,6 +21,7 @@ from models.users import (
     ClientUpdate,
 )
 
+# from bson import ObjectId
 
 host_router = APIRouter(  # swagger에서 보여지는 태그 이름을 설정한다.
     tags=["Host"],
@@ -35,7 +36,7 @@ client_database = Database(Client)
 hash_password = HashPassword()
 
 
-@host_router.post("/signup")  # response_model=HostResponse)
+@host_router.post("/signup")
 async def sign_new_host_up(
     current_user: Host,  # 라우트 함수가 호출될 때 전달되는 인자인 'current_user'는 'Host' 타입으로 정의되어 있고 'Host' 데이터 모델 형식에 맞는 데이터를 전달해야 함을 의미한다.
 ) -> dict:
@@ -219,87 +220,6 @@ async def delete_host(current_user: Host = Depends(authenticate_host)):
     return {
         "message": "Host deleted successfully.",
     }
-
-
-# @host_router.get("/{host_id}", response_model=Host)
-# async def get_host(
-#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
-# ) -> Host:
-#     """
-#     생성 목적: 호스트 정보를 id로 가져온다.
-#     """
-#     if current_user.id != host_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only get your own account",
-#         )
-#     host = await Host.find_one(Host.id == host_id)
-#     if not host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Host not found",
-#         )
-#     return host
-
-# @host_router.put("/{host_id}", response_model=Host)
-# async def update_host(
-#     host_id: PydanticObjectId,
-#     body: HostUpdate,
-#     current_user: Host = Depends(authenticate_host),
-# ) -> Host:
-#     """
-#     현재 호스트 정보를 업데이트한다.
-#     """
-#     host = await Host.get(host_id)
-
-#     """
-#     업데이트되는 사용자 정보의 password 필드가 비어 있지 않다면, 새로운 비밀번호를 해싱하고 업데이트하기 전에 해싱된 비밀번호를 해당 필드에 할당합니다. 이렇게 하면 비밀번호가 변경될 때 새로운 해시값이 저장되며, 기존 비밀번호는 해싱되어 저장됩니다.
-#     """
-#     # 비밀번호를 수정한 경우에만 비밀번호 해싱을 적용한다.
-#     if body.password:
-#         hashed_password = hash_password.create_hash(body.password)
-#         body.password = hashed_password
-
-#     # current_user 객체에서 호스트 ID를 가져온다.
-#     host_id = current_user.id
-#     if host_id != host.id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only update your own account",
-#         )
-#     # host_id를 사용하여 호스트 정보를 업데이트한다.
-#     updated_host = await host_database.update(host_id, body)
-
-#     if not updated_host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="No Host update has been made",
-#         )
-#     return updated_host
-
-# @host_router.delete("/{host_id}")
-# async def delete_host(
-#     host_id: PydanticObjectId,
-#     current_user: Host = Depends(authenticate_host),
-# ):
-#     """
-#     생성 목적: 현재 호스트 정보를 삭제합니다.
-#     """
-#     if host_id != current_user.id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Forbidden: You can only delete your own account",
-#         )
-#     host = await Host.get(host_id)
-#     if not host:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Host account not found",
-#         )
-#     await host_database.delete(current_user.id)
-#     return {
-#         "message": "Host deleted successfully.",
-#     }
 
 
 """
@@ -490,6 +410,90 @@ async def delete_client(current_user: Client = Depends(authenticate_client)):
 
 """
 ===================================================================================================
+"""
+
+# @host_router.get("/{host_id}", response_model=Host)
+# async def get_host(
+#     host_id: PydanticObjectId, current_user: Host = Depends(authenticate_host)
+# ) -> Host:
+#     """
+#     생성 목적: 호스트 정보를 id로 가져온다.
+#     """
+#     if current_user.id != host_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only get your own account",
+#         )
+#     host = await Host.find_one(Host.id == host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host not found",
+#         )
+#     return host
+
+# @host_router.put("/{host_id}", response_model=Host)
+# async def update_host(
+#     host_id: PydanticObjectId,
+#     body: HostUpdate,
+#     current_user: Host = Depends(authenticate_host),
+# ) -> Host:
+#     """
+#     현재 호스트 정보를 업데이트한다.
+#     """
+#     host = await Host.get(host_id)
+
+#     """
+#     업데이트되는 사용자 정보의 password 필드가 비어 있지 않다면, 새로운 비밀번호를 해싱하고 업데이트하기 전에 해싱된 비밀번호를 해당 필드에 할당합니다. 이렇게 하면 비밀번호가 변경될 때 새로운 해시값이 저장되며, 기존 비밀번호는 해싱되어 저장됩니다.
+#     """
+#     # 비밀번호를 수정한 경우에만 비밀번호 해싱을 적용한다.
+#     if body.password:
+#         hashed_password = hash_password.create_hash(body.password)
+#         body.password = hashed_password
+
+#     # current_user 객체에서 호스트 ID를 가져온다.
+#     host_id = current_user.id
+#     if host_id != host.id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only update your own account",
+#         )
+#     # host_id를 사용하여 호스트 정보를 업데이트한다.
+#     updated_host = await host_database.update(host_id, body)
+
+#     if not updated_host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="No Host update has been made",
+#         )
+#     return updated_host
+
+# @host_router.delete("/{host_id}")
+# async def delete_host(
+#     host_id: PydanticObjectId,
+#     current_user: Host = Depends(authenticate_host),
+# ):
+#     """
+#     생성 목적: 현재 호스트 정보를 삭제합니다.
+#     """
+#     if host_id != current_user.id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Forbidden: You can only delete your own account",
+#         )
+#     host = await Host.get(host_id)
+#     if not host:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Host account not found",
+#         )
+#     await host_database.delete(current_user.id)
+#     return {
+#         "message": "Host deleted successfully.",
+#     }
+
+"""
+-----------------------------------------------------------------------
 """
 
 # @client_router.get("/{client_id}", response_model=Client)

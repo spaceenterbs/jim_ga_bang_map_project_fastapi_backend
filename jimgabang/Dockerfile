@@ -1,9 +1,7 @@
-# FROM python:3.11.6-bookworm
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11
 
 ENV APP_MODULE main:app
 
-# WORKDIR /app
 
 # 한개의 파일만 복사하는 경우
 COPY requirements.txt /app/requirements.txt
@@ -11,9 +9,13 @@ COPY requirements.txt /app/requirements.txt
 
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
-# EXPOSE 80
-
 COPY ./ /app
+
+# FROM python:3.11.6-bookworm
+
+# WORKDIR /app
+
+# EXPOSE 80
 
 # CMD ["python", "main.py"]
 
